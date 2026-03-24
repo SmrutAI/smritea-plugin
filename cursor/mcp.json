@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "smritea": {
+      "command": "npx",
+      "args": ["-y", "smritea-mcp", "serve"],
+      "env": {
+        "SMRITEA_API_KEY": "${SMRITEA_API_KEY}",
+        "SMRITEA_BASE_URL": "${SMRITEA_BASE_URL}"
+      }
+    }
+  }
+}

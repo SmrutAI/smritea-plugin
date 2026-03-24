@@ -1,0 +1,38 @@
+---
+description: SmriTea persistent memory rules for Cursor AI
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# SmriTea Memory Rules
+
+## At Conversation Start
+
+When starting any new conversation or task:
+1. Call `search_memories` with a query describing the current task or topic, `limit: 10`
+2. If relevant memories are found, incorporate them naturally into your understanding
+4. Do NOT repeat memories verbatim — use them as background context
+
+## When to Store Memories
+
+Call `add_memory` when the user:
+- States a preference that should persist ("I prefer X", "always use Y")
+- Makes a correction ("don't do X, do Y instead")
+- Makes an architectural or technical decision
+- Says "remember that..." or "keep in mind..."
+- Shares project context that would be useful in future sessions
+
+After storing, acknowledge: "I'll remember that."
+
+## Actor Types
+
+- `user` — user preferences and personal choices
+- `agent` — AI-learned patterns about the codebase
+- `system` — project-level facts and architecture decisions
+
+## When to Search
+
+- Before starting a significant coding task
+- When the user references past work ("like we did before", "remember when...")
+- When you encounter an unfamiliar pattern or decision
+

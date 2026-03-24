@@ -1,0 +1,13 @@
+{
+  "name": "smritea-plugin",
+  "version": "0.1.0",
+  "description": "SmriTea plugin for Claude Code and Cursor",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "smritea-sdk": "file:../../smritea-sdk/typescript"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

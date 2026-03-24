@@ -1,0 +1,8 @@
+{
+  "name": "smritea",
+  "version": "0.1.0",
+  "description": "Persistent AI memory across sessions — store, search, and recall context automatically",
+  "author": { "name": "Bytonomics LLP", "url": "https://github.com/SmrutAI" },
+  "homepage": "https://smritea.ai",
+  "repository": "https://github.com/SmrutAI/smritea-plugin"
+}
