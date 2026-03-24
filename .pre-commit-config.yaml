@@ -1,0 +1,30 @@
+# Pre-commit hooks for smritea-plugin
+#
+# Setup:
+#   pip install pre-commit && pre-commit install
+#
+# Usage:
+#   pre-commit run --all-files   # Run all hooks
+#   pre-commit run <hook-id>     # Run a specific hook
+#
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: plugin-check
+        name: Syntax check (node --check)
+        entry: make check
+        language: system
+        files: \.(js)$
+        pass_filenames: false
+
+      - id: plugin-lint
+        name: Lint (eslint)
+        entry: make lint
+        language: system
+        files: \.(js)$
+        pass_filenames: false
