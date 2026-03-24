@@ -19,12 +19,19 @@ repos:
         name: Syntax check (node --check)
         entry: make check
         language: system
-        files: \.(js)$
+        files: ^scripts/.*\.js$
+        pass_filenames: false
+
+      - id: plugin-build
+        name: Bundle (esbuild) — rebuilds scripts/dist/context-hook.js
+        entry: make build
+        language: system
+        files: ^scripts/.*\.js$
         pass_filenames: false
 
       - id: plugin-lint
         name: Lint (eslint)
         entry: make lint
         language: system
-        files: \.(js)$
+        files: ^scripts/.*\.js$
         pass_filenames: false

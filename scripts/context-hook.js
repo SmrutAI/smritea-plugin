@@ -1,6 +1,9 @@
+// This file is bundled by esbuild (npm run build) into scripts/dist/context-hook.js.
+// The bundle is committed to the repo so users installing from GitHub don't need to run npm install.
+// Edit this source file; run `make build` or `npm run build` to regenerate the bundle.
 import { resolveConfig } from './lib/settings.js';
-import { SmriteaClient } from 'smritea-sdk';
 import { formatContext } from './lib/format-context.js';
+import { SmriteaClient } from 'smritea-sdk';
 
 async function main() {
   const { apiKey, baseUrl, appId } = resolveConfig();

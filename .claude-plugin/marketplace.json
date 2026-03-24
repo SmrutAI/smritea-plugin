@@ -1,0 +1,27 @@
+{
+  "name": "smritea",
+  "owner": {
+    "name": "SmrutAI",
+    "email": "hello@smritea.ai"
+  },
+  "metadata": {
+    "description": "Official SmriTea plugin marketplace — persistent AI memory for Claude Code and Cursor"
+  },
+  "plugins": [
+    {
+      "name": "smritea",
+      "description": "Persistent AI memory across sessions — store, search, and recall context automatically",
+      "version": "0.1.0",
+      "author": {
+        "name": "SmrutAI"
+      },
+      "homepage": "https://smritea.ai",
+      "repository": "https://github.com/SmrutAI/smritea-plugin",
+      "source": {
+        "source": "github",
+        "repo": "SmrutAI/smritea-plugin",
+        "ref": "release"
+      }
+    }
+  ]
+}

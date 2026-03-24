@@ -7,8 +7,12 @@
   "dependencies": {
     "smritea-sdk": "file:../../smritea-sdk/typescript"
   },
+  "scripts": {
+    "build": "esbuild scripts/context-hook.js --bundle --platform=node --format=esm --outfile=scripts/dist/context-hook.js"
+  },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "esbuild": "^0.24.0",
     "eslint": "^9.0.0",
     "globals": "^17.4.0"
   },

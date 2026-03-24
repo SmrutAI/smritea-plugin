@@ -1,4 +1,4 @@
-.PHONY: install check lint format help
+.PHONY: install build check lint format help
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
@@ -6,15 +6,16 @@ help: ## Show available targets
 install: ## Install dependencies (smritea-sdk + devDeps)
 	npm install
 
-check: ## Syntax-check all scripts via node --check (no deps required)
+build: install ## Bundle scripts/context-hook.js + deps into scripts/dist/context-hook.js
+	npm run build
+
+check: ## Syntax-check source scripts via node --check (no deps required)
 	node --check scripts/context-hook.js
 	node --check scripts/lib/settings.js
 	node --check scripts/lib/format-context.js
 
-lint: ## Lint JavaScript with ESLint
-	npm install --silent
+lint: build ## Lint JavaScript source with ESLint
 	npx eslint scripts/
 
-format: ## Auto-fix JavaScript with ESLint (--fix)
-	npm install --silent
+format: build ## Auto-fix JavaScript source with ESLint (--fix)
 	npx eslint scripts/ --fix
