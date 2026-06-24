@@ -16,8 +16,8 @@ Persistent AI memory across sessions — store, search, and recall context autom
 ### 1. Load the plugin (local testing)
 
 ```bash
-# From the smritea-cloud repo root
-claude --plugin-dir ./typescript/smritea-plugin
+# From the plugin repo root
+claude --plugin-dir .
 ```
 
 This loads the plugin for the current session. It is not published to any marketplace yet.

@@ -51,7 +51,7 @@ function formatContext(results, options = {}) {
   ].join("\n");
 }
 
-// ../../smritea-sdk/typescript/dist/index.mjs
+// smritea-sdk
 var BASE_PATH = "http://api.smritea.ai/api/v1".replace(/\/+$/, "");
 var Configuration = class {
   constructor(configuration = {}) {

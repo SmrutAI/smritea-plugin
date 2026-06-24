@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "dependencies": {
-    "smritea-sdk": "file:../../smritea-sdk/typescript"
+    "smritea-sdk": "file:../../polyglot/smritea-sdk/typescript"
   },
   "scripts": {
     "build": "esbuild scripts/context-hook.js --bundle --platform=node --format=esm --outfile=scripts/dist/context-hook.js"
