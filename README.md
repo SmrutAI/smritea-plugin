@@ -8,21 +8,27 @@ Persistent AI memory across sessions — store, search, and recall context autom
   context
 - **MCP tools**: Exposes `add_memory`, `search_memories`, `get_memory`, `delete_memory`, `select_app`, `list_apps` via
   the SmriTea MCP server
-- **Commands**: `/smritea:login`, `/smritea:config`, `/smritea:recall <topic>`
+- **Commands**: `/smritea:login`, `/smritea:config`, `/smritea:add-memory <text>`, `/smritea:recall <topic>`
 - **Skills**: Guides the AI on when and how to use memory tools
 
 ## Installation
 
-### 1. Load the plugin (local testing)
+### 1. Clone the plugin repo
 
 ```bash
-# From the plugin repo root
+git clone git@github.com:SmrutAI/smritea-plugin.git
+cd smritea-plugin
+```
+
+### 2. Load the plugin into Claude Code
+
+```bash
 claude --plugin-dir .
 ```
 
 This loads the plugin for the current session. It is not published to any marketplace yet.
 
-### 2. Log in
+### 3. Log in
 
 Run in your AI coding assistant:
 
@@ -40,7 +46,15 @@ Follow the prompts to enter your API key (get one at https://app.smritea.ai → 
 
 This shows your current settings and lets you select an app for this project.
 
-### 4. Verify
+### 5. Save a memory
+
+```
+/smritea:add-memory user prefers interfaces layered design with clean architecture recommendations, where each layer has dependency injection with interfaces that can be swapped with different implementations/mocks as needed
+```
+
+This stores a memory in SmriTea for the currently configured app/project.
+
+### 6. Verify
 
 ```
 /smritea:recall test
@@ -50,11 +64,12 @@ If configured correctly, this will search your memories and show results (or "no
 
 ## Commands
 
-| Command                   | Description                                                           |
-|---------------------------|-----------------------------------------------------------------------|
-| `/smritea:login`          | Set up API key and base URL (stored in `~/.smritea/credentials.json`) |
-| `/smritea:config`         | View and update project settings (stored in `.smritea/config.json`)   |
-| `/smritea:recall <topic>` | Search memories for context relevant to a topic                       |
+| Command                         | Description                                                           |
+|---------------------------------|-----------------------------------------------------------------------|
+| `/smritea:login`                | Set up API key and base URL (stored in `~/.smritea/credentials.json`) |
+| `/smritea:config`               | View and update project settings (stored in `.smritea/config.json`)   |
+| `/smritea:add-memory <text>`    | Save a memory to SmriTea for the current project/app                  |
+| `/smritea:recall <topic>`       | Search memories for context relevant to a topic                       |
 
 ## Configuration
 
