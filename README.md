@@ -1,3 +1,11 @@
+---
+type: Overview
+title: SmriTea Plugin for Claude Code and Cursor
+status: stable
+tags:
+- readme
+---
+
 # SmriTea Plugin for Claude Code and Cursor
 
 Persistent AI memory across sessions — store, search, and recall context automatically.
