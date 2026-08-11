@@ -1,6 +1,6 @@
 // scripts/lib/settings.js
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { homedir } from "node:os";
 function readJsonFile(filePath) {
   try {
@@ -11,12 +11,25 @@ function readJsonFile(filePath) {
   }
 }
 function resolveConfig() {
+  const authConfig = readJsonFile(join(homedir(), ".smritea", "auth.json"));
+  const globalConfig = readJsonFile(join(homedir(), ".smritea", "config.json"));
   const projectConfig = readJsonFile(join(process.cwd(), ".smritea", "config.json"));
-  const globalConfig = readJsonFile(join(homedir(), ".smritea", "credentials.json"));
-  const apiKey = process.env.SMRITEA_API_KEY || projectConfig?.apiKey || globalConfig?.apiKey || null;
-  const baseUrl = process.env.SMRITEA_BASE_URL || projectConfig?.baseUrl || globalConfig?.baseUrl || "https://api.smritea.ai";
-  const appId = process.env.SMRITEA_APP_ID || projectConfig?.appId || null;
-  return { apiKey, baseUrl, appId };
+  const studioAccessToken = process.env.SMRITEA_STUDIO_ACCESS_TOKEN || (typeof authConfig?.access_token === "string" && authConfig.access_token.trim() !== "" ? authConfig.access_token : null);
+  const selectedAppId = process.env.SMRITEA_APP_ID || (typeof globalConfig?.selected_app_id === "string" && globalConfig.selected_app_id.trim() !== "" ? globalConfig.selected_app_id : null);
+  const selectedAppAPIKey = process.env.SMRITEA_API_KEY || (selectedAppId && authConfig?.apps && typeof authConfig.apps === "object" ? authConfig.apps[selectedAppId]?.api_key || null : null);
+  const projectName = process.env.SMRITEA_PROJECT_NAME || (typeof projectConfig?.project === "string" && projectConfig.project.trim() !== "" ? projectConfig.project : basename(process.cwd()));
+  const dataBaseUrl = process.env.SMRITEA_BASE_URL || (typeof globalConfig?.base_url === "string" && globalConfig.base_url.trim() !== "" ? globalConfig.base_url : "https://api-us.smritea.ai");
+  const studioBaseUrl = process.env.SMRITEA_STUDIO_BASE_URL || (typeof globalConfig?.studio_base_url === "string" && globalConfig.studio_base_url.trim() !== "" ? globalConfig.studio_base_url : "https://api.smritea.ai");
+  return {
+    studioAccessToken,
+    selectedAppId,
+    selectedAppAPIKey,
+    projectName,
+    dataBaseUrl,
+    studioBaseUrl,
+    apiKey: selectedAppAPIKey,
+    appId: selectedAppId
+  };
 }
 
 // scripts/lib/format-context.js
@@ -51,7 +64,7 @@ function formatContext(results, options = {}) {
   ].join("\n");
 }
 
-// smritea-sdk
+// ../../polyglot/smritea-sdk/typescript/dist/index.mjs
 var BASE_PATH = "http://api.smritea.ai/api/v1".replace(/\/+$/, "");
 var Configuration = class {
   constructor(configuration = {}) {
@@ -300,10 +313,114 @@ var VoidApiResponse = class {
     return void 0;
   }
 };
-function CommondtoEntityExtractionConfigToJSON(json) {
-  return CommondtoEntityExtractionConfigToJSONTyped(json, false);
+function PersonaDomainConfigToJSON(json) {
+  return PersonaDomainConfigToJSONTyped(json, false);
 }
-function CommondtoEntityExtractionConfigToJSONTyped(value, ignoreDiscriminator = false) {
+function PersonaDomainConfigToJSONTyped(value, ignoreDiscriminator = false) {
+  if (value == null) {
+    return value;
+  }
+  return {
+    "description": value["description"],
+    "is_default": value["isDefault"],
+    "name": value["name"],
+    "traits": value["traits"]
+  };
+}
+function PersonaExtractionConfigToJSON(json) {
+  return PersonaExtractionConfigToJSONTyped(json, false);
+}
+function PersonaExtractionConfigToJSONTyped(value, ignoreDiscriminator = false) {
+  if (value == null) {
+    return value;
+  }
+  return {
+    "actor_types": value["actorTypes"],
+    "domains": value["domains"] == null ? void 0 : value["domains"].map(PersonaDomainConfigToJSON),
+    "enabled": value["enabled"],
+    "max_tokens": value["maxTokens"],
+    "model": value["model"],
+    "temperature": value["temperature"]
+  };
+}
+function FactExtractionConfigToJSON(json) {
+  return FactExtractionConfigToJSONTyped(json, false);
+}
+function FactExtractionConfigToJSONTyped(value, ignoreDiscriminator = false) {
+  if (value == null) {
+    return value;
+  }
+  return {
+    "max_passes": value["maxPasses"],
+    "max_tokens": value["maxTokens"],
+    "min_importance": value["minImportance"],
+    "model": value["model"],
+    "strategy": value["strategy"],
+    "temperature": value["temperature"]
+  };
+}
+function RelativeStandingConfigFromJSON(json) {
+  return RelativeStandingConfigFromJSONTyped(json, false);
+}
+function RelativeStandingConfigFromJSONTyped(json, ignoreDiscriminator) {
+  if (json == null) {
+    return json;
+  }
+  return {
+    "decayFactor": json["decay_factor"] == null ? void 0 : json["decay_factor"],
+    "decayFunction": json["decay_function"] == null ? void 0 : json["decay_function"],
+    "importance": json["importance"] == null ? void 0 : json["importance"]
+  };
+}
+function RelativeStandingConfigToJSON(json) {
+  return RelativeStandingConfigToJSONTyped(json, false);
+}
+function RelativeStandingConfigToJSONTyped(value, ignoreDiscriminator = false) {
+  if (value == null) {
+    return value;
+  }
+  return {
+    "decay_factor": value["decayFactor"],
+    "decay_function": value["decayFunction"],
+    "importance": value["importance"]
+  };
+}
+function MemoryScopeFromJSON(json) {
+  return MemoryScopeFromJSONTyped(json, false);
+}
+function MemoryScopeFromJSONTyped(json, ignoreDiscriminator) {
+  if (json == null) {
+    return json;
+  }
+  return {
+    "actorId": json["actor_id"] == null ? void 0 : json["actor_id"],
+    "actorName": json["actor_name"] == null ? void 0 : json["actor_name"],
+    "actorType": json["actor_type"] == null ? void 0 : json["actor_type"],
+    "conversationId": json["conversation_id"] == null ? void 0 : json["conversation_id"],
+    "participantIds": json["participant_ids"] == null ? void 0 : json["participant_ids"],
+    "sourceType": json["source_type"] == null ? void 0 : json["source_type"]
+  };
+}
+function MemoryScopeToJSON(json) {
+  return MemoryScopeToJSONTyped(json, false);
+}
+function MemoryScopeToJSONTyped(value, ignoreDiscriminator = false) {
+  if (value == null) {
+    return value;
+  }
+  return {
+    "actor_id": value["actorId"],
+    "actor_name": value["actorName"],
+    "actor_type": value["actorType"],
+    "conversation_id": value["conversationId"],
+    "participant_ids": value["participantIds"],
+    "source_type": value["sourceType"]
+  };
+}
+function EntityExtractionConfigToJSON(json) {
+  return EntityExtractionConfigToJSONTyped(json, false);
+}
+function EntityExtractionConfigToJSONTyped(value, ignoreDiscriminator = false) {
   if (value == null) {
     return value;
   }
@@ -319,188 +436,169 @@ function CommondtoEntityExtractionConfigToJSONTyped(value, ignoreDiscriminator =
     "temperature": value["temperature"]
   };
 }
-function CommondtoFactExtractionConfigToJSON(json) {
-  return CommondtoFactExtractionConfigToJSONTyped(json, false);
+function CreateMemoryRequestToJSON(json) {
+  return CreateMemoryRequestToJSONTyped(json, false);
 }
-function CommondtoFactExtractionConfigToJSONTyped(value, ignoreDiscriminator = false) {
+function CreateMemoryRequestToJSONTyped(value, ignoreDiscriminator = false) {
   if (value == null) {
     return value;
   }
   return {
-    "max_passes": value["maxPasses"],
-    "max_tokens": value["maxTokens"],
-    "min_importance": value["minImportance"],
-    "model": value["model"],
-    "strategy": value["strategy"],
-    "temperature": value["temperature"]
-  };
-}
-function CommondtoPersonaDomainConfigToJSON(json) {
-  return CommondtoPersonaDomainConfigToJSONTyped(json, false);
-}
-function CommondtoPersonaDomainConfigToJSONTyped(value, ignoreDiscriminator = false) {
-  if (value == null) {
-    return value;
-  }
-  return {
-    "description": value["description"],
-    "is_default": value["isDefault"],
-    "name": value["name"],
-    "traits": value["traits"]
-  };
-}
-function CommondtoPersonaExtractionConfigToJSON(json) {
-  return CommondtoPersonaExtractionConfigToJSONTyped(json, false);
-}
-function CommondtoPersonaExtractionConfigToJSONTyped(value, ignoreDiscriminator = false) {
-  if (value == null) {
-    return value;
-  }
-  return {
-    "actor_types": value["actorTypes"],
-    "domains": value["domains"] == null ? void 0 : value["domains"].map(CommondtoPersonaDomainConfigToJSON),
-    "enabled": value["enabled"],
-    "max_tokens": value["maxTokens"],
-    "model": value["model"],
-    "temperature": value["temperature"]
-  };
-}
-function CommondtoRelativeStandingConfigFromJSON(json) {
-  return CommondtoRelativeStandingConfigFromJSONTyped(json, false);
-}
-function CommondtoRelativeStandingConfigFromJSONTyped(json, ignoreDiscriminator) {
-  if (json == null) {
-    return json;
-  }
-  return {
-    "decayFactor": json["decay_factor"] == null ? void 0 : json["decay_factor"],
-    "decayFunction": json["decay_function"] == null ? void 0 : json["decay_function"],
-    "importance": json["importance"] == null ? void 0 : json["importance"]
-  };
-}
-function CommondtoRelativeStandingConfigToJSON(json) {
-  return CommondtoRelativeStandingConfigToJSONTyped(json, false);
-}
-function CommondtoRelativeStandingConfigToJSONTyped(value, ignoreDiscriminator = false) {
-  if (value == null) {
-    return value;
-  }
-  return {
-    "decay_factor": value["decayFactor"],
-    "decay_function": value["decayFunction"],
-    "importance": value["importance"]
-  };
-}
-function MemoryCreateMemoryRequestToJSON(json) {
-  return MemoryCreateMemoryRequestToJSONTyped(json, false);
-}
-function MemoryCreateMemoryRequestToJSONTyped(value, ignoreDiscriminator = false) {
-  if (value == null) {
-    return value;
-  }
-  return {
-    "active_from": value["activeFrom"],
-    "active_to": value["activeTo"],
-    "actor_id": value["actorId"],
-    "actor_name": value["actorName"],
-    "actor_type": value["actorType"],
     "app_id": value["appId"],
     "content": value["content"],
-    "conversation_id": value["conversationId"],
-    "conversation_message_id": value["conversationMessageId"],
-    "entity_extraction_overrides": CommondtoEntityExtractionConfigToJSON(value["entityExtractionOverrides"]),
-    "fact_extraction_overrides": CommondtoFactExtractionConfigToJSON(value["factExtractionOverrides"]),
+    "entity_extraction_overrides": EntityExtractionConfigToJSON(value["entityExtractionOverrides"]),
+    "event_occurred_at": value["eventOccurredAt"],
+    "fact_extraction_overrides": FactExtractionConfigToJSON(value["factExtractionOverrides"]),
     "metadata": value["metadata"],
-    "persona_extraction_overrides": CommondtoPersonaExtractionConfigToJSON(value["personaExtractionOverrides"]),
-    "relative_standing": CommondtoRelativeStandingConfigToJSON(value["relativeStanding"])
+    "persona_extraction_overrides": PersonaExtractionConfigToJSON(value["personaExtractionOverrides"]),
+    "relative_standing": RelativeStandingConfigToJSON(value["relativeStanding"]),
+    "scope": MemoryScopeToJSON(value["scope"])
   };
 }
-function MemoryMemoryResponseFromJSON(json) {
-  return MemoryMemoryResponseFromJSONTyped(json, false);
+function MemoryResponseFromJSON(json) {
+  return MemoryResponseFromJSONTyped(json, false);
 }
-function MemoryMemoryResponseFromJSONTyped(json, ignoreDiscriminator) {
+function MemoryResponseFromJSONTyped(json, ignoreDiscriminator) {
   if (json == null) {
     return json;
   }
   return {
     "activeFrom": json["active_from"] == null ? void 0 : json["active_from"],
     "activeTo": json["active_to"] == null ? void 0 : json["active_to"],
-    "actorId": json["actor_id"] == null ? void 0 : json["actor_id"],
-    "actorName": json["actor_name"] == null ? void 0 : json["actor_name"],
-    "actorType": json["actor_type"] == null ? void 0 : json["actor_type"],
     "appId": json["app_id"] == null ? void 0 : json["app_id"],
     "content": json["content"] == null ? void 0 : json["content"],
-    "conversationId": json["conversation_id"] == null ? void 0 : json["conversation_id"],
-    "conversationMessageId": json["conversation_message_id"] == null ? void 0 : json["conversation_message_id"],
     "createdAt": json["created_at"] == null ? void 0 : json["created_at"],
     "id": json["id"] == null ? void 0 : json["id"],
     "metadata": json["metadata"] == null ? void 0 : json["metadata"],
-    "relativeStanding": json["relative_standing"] == null ? void 0 : CommondtoRelativeStandingConfigFromJSON(json["relative_standing"]),
+    "relativeStanding": json["relative_standing"] == null ? void 0 : RelativeStandingConfigFromJSON(json["relative_standing"]),
+    "scope": json["scope"] == null ? void 0 : MemoryScopeFromJSON(json["scope"]),
     "updatedAt": json["updated_at"] == null ? void 0 : json["updated_at"]
   };
 }
-function MemorySearchMemoryResultFromJSON(json) {
-  return MemorySearchMemoryResultFromJSONTyped(json, false);
+function StepTraceFromJSON(json) {
+  return StepTraceFromJSONTyped(json, false);
 }
-function MemorySearchMemoryResultFromJSONTyped(json, ignoreDiscriminator) {
+function StepTraceFromJSONTyped(json, ignoreDiscriminator) {
+  if (json == null) {
+    return json;
+  }
+  return {
+    "durationMs": json["duration_ms"] == null ? void 0 : json["duration_ms"],
+    "error": json["error"] == null ? void 0 : json["error"],
+    "input": json["input"] == null ? void 0 : json["input"],
+    "output": json["output"] == null ? void 0 : json["output"],
+    "resultCount": json["result_count"] == null ? void 0 : json["result_count"],
+    "stepName": json["step_name"] == null ? void 0 : json["step_name"]
+  };
+}
+function StageTraceFromJSON(json) {
+  return StageTraceFromJSONTyped(json, false);
+}
+function StageTraceFromJSONTyped(json, ignoreDiscriminator) {
+  if (json == null) {
+    return json;
+  }
+  return {
+    "durationMs": json["duration_ms"] == null ? void 0 : json["duration_ms"],
+    "error": json["error"] == null ? void 0 : json["error"],
+    "input": json["input"] == null ? void 0 : json["input"],
+    "output": json["output"] == null ? void 0 : json["output"],
+    "resultCount": json["result_count"] == null ? void 0 : json["result_count"],
+    "stageName": json["stage_name"] == null ? void 0 : json["stage_name"],
+    "steps": json["steps"] == null ? void 0 : json["steps"].map(StepTraceFromJSON)
+  };
+}
+function TraceFromJSON(json) {
+  return TraceFromJSONTyped(json, false);
+}
+function TraceFromJSONTyped(json, ignoreDiscriminator) {
+  if (json == null) {
+    return json;
+  }
+  return {
+    "stages": json["stages"] == null ? void 0 : json["stages"].map(StageTraceFromJSON),
+    "totalMs": json["total_ms"] == null ? void 0 : json["total_ms"]
+  };
+}
+function CreateMemoryResponseFromJSON(json) {
+  return CreateMemoryResponseFromJSONTyped(json, false);
+}
+function CreateMemoryResponseFromJSONTyped(json, ignoreDiscriminator) {
+  if (json == null) {
+    return json;
+  }
+  return {
+    "explainTrace": json["explain_trace"] == null ? void 0 : TraceFromJSON(json["explain_trace"]),
+    "explicitSkip": json["explicit_skip"] == null ? void 0 : json["explicit_skip"],
+    "factsExtracted": json["facts_extracted"] == null ? void 0 : json["facts_extracted"],
+    "memories": json["memories"] == null ? void 0 : json["memories"].map(MemoryResponseFromJSON),
+    "skippedCount": json["skipped_count"] == null ? void 0 : json["skipped_count"],
+    "updatedCount": json["updated_count"] == null ? void 0 : json["updated_count"]
+  };
+}
+function RerankerTypeToJSON(value) {
+  return value;
+}
+function SearchMemoryResultFromJSON(json) {
+  return SearchMemoryResultFromJSONTyped(json, false);
+}
+function SearchMemoryResultFromJSONTyped(json, ignoreDiscriminator) {
   if (json == null) {
     return json;
   }
   return {
     "activeFrom": json["active_from"] == null ? void 0 : json["active_from"],
     "activeTo": json["active_to"] == null ? void 0 : json["active_to"],
-    "actorId": json["actor_id"] == null ? void 0 : json["actor_id"],
-    "actorName": json["actor_name"] == null ? void 0 : json["actor_name"],
-    "actorType": json["actor_type"] == null ? void 0 : json["actor_type"],
     "content": json["content"] == null ? void 0 : json["content"],
-    "conversationId": json["conversation_id"] == null ? void 0 : json["conversation_id"],
     "id": json["id"] == null ? void 0 : json["id"],
-    "metadata": json["metadata"] == null ? void 0 : json["metadata"]
+    "metadata": json["metadata"] == null ? void 0 : json["metadata"],
+    "scope": json["scope"] == null ? void 0 : MemoryScopeFromJSON(json["scope"])
   };
 }
-function MemorySearchMemoryResponseFromJSON(json) {
-  return MemorySearchMemoryResponseFromJSONTyped(json, false);
+function SearchMemoryResponseFromJSON(json) {
+  return SearchMemoryResponseFromJSONTyped(json, false);
 }
-function MemorySearchMemoryResponseFromJSONTyped(json, ignoreDiscriminator) {
+function SearchMemoryResponseFromJSONTyped(json, ignoreDiscriminator) {
   if (json == null) {
     return json;
   }
   return {
-    "memory": json["memory"] == null ? void 0 : MemorySearchMemoryResultFromJSON(json["memory"]),
+    "memory": json["memory"] == null ? void 0 : SearchMemoryResultFromJSON(json["memory"]),
     "score": json["score"] == null ? void 0 : json["score"]
   };
 }
-function MemorySearchMemoriesResponseFromJSON(json) {
-  return MemorySearchMemoriesResponseFromJSONTyped(json, false);
+function SearchMemoriesResponseFromJSON(json) {
+  return SearchMemoriesResponseFromJSONTyped(json, false);
 }
-function MemorySearchMemoriesResponseFromJSONTyped(json, ignoreDiscriminator) {
+function SearchMemoriesResponseFromJSONTyped(json, ignoreDiscriminator) {
   if (json == null) {
     return json;
   }
   return {
-    "memories": json["memories"] == null ? void 0 : json["memories"].map(MemorySearchMemoryResponseFromJSON)
+    "explainTrace": json["explain_trace"] == null ? void 0 : TraceFromJSON(json["explain_trace"]),
+    "memories": json["memories"] == null ? void 0 : json["memories"].map(SearchMemoryResponseFromJSON)
   };
 }
-function ModelEnumsSearchMethodToJSON(value) {
+function SearchMethodToJSON(value) {
   return value;
 }
-function MemorySearchMemoryRequestToJSON(json) {
-  return MemorySearchMemoryRequestToJSONTyped(json, false);
+function SearchMemoryRequestToJSON(json) {
+  return SearchMemoryRequestToJSONTyped(json, false);
 }
-function MemorySearchMemoryRequestToJSONTyped(value, ignoreDiscriminator = false) {
+function SearchMemoryRequestToJSONTyped(value, ignoreDiscriminator = false) {
   if (value == null) {
     return value;
   }
   return {
-    "actor_id": value["actorId"],
-    "actor_type": value["actorType"],
     "app_id": value["appId"],
-    "conversation_id": value["conversationId"],
     "from_time": value["fromTime"],
     "graph_depth": value["graphDepth"],
     "limit": value["limit"],
-    "method": ModelEnumsSearchMethodToJSON(value["method"]),
+    "metadata_filter": value["metadataFilter"],
+    "method": SearchMethodToJSON(value["method"]),
     "query": value["query"],
+    "reranker_type": RerankerTypeToJSON(value["rerankerType"]),
+    "scope": MemoryScopeToJSON(value["scope"]),
     "threshold": value["threshold"],
     "to_time": value["toTime"],
     "valid_at": value["validAt"]
@@ -529,7 +627,7 @@ var SDKMemoryApi = class extends BaseAPI {
       method: "POST",
       headers: headerParameters,
       query: queryParameters,
-      body: MemoryCreateMemoryRequestToJSON(requestParameters["request"])
+      body: CreateMemoryRequestToJSON(requestParameters["request"])
     };
   }
   /**
@@ -539,7 +637,7 @@ var SDKMemoryApi = class extends BaseAPI {
   async createMemoryRaw(requestParameters, initOverrides) {
     const requestOptions = await this.createMemoryRequestOpts(requestParameters);
     const response = await this.request(requestOptions, initOverrides);
-    return new JSONApiResponse(response, (jsonValue) => MemoryMemoryResponseFromJSON(jsonValue));
+    return new JSONApiResponse(response, (jsonValue) => CreateMemoryResponseFromJSON(jsonValue));
   }
   /**
    * Create a new memory with quota and rate limit enforcement
@@ -620,7 +718,7 @@ var SDKMemoryApi = class extends BaseAPI {
   async getMemoryRaw(requestParameters, initOverrides) {
     const requestOptions = await this.getMemoryRequestOpts(requestParameters);
     const response = await this.request(requestOptions, initOverrides);
-    return new JSONApiResponse(response, (jsonValue) => MemoryMemoryResponseFromJSON(jsonValue));
+    return new JSONApiResponse(response, (jsonValue) => MemoryResponseFromJSON(jsonValue));
   }
   /**
    * Get a single memory by ID with rate limit enforcement
@@ -652,7 +750,7 @@ var SDKMemoryApi = class extends BaseAPI {
       method: "POST",
       headers: headerParameters,
       query: queryParameters,
-      body: MemorySearchMemoryRequestToJSON(requestParameters["request"])
+      body: SearchMemoryRequestToJSON(requestParameters["request"])
     };
   }
   /**
@@ -662,7 +760,7 @@ var SDKMemoryApi = class extends BaseAPI {
   async searchMemoriesRaw(requestParameters, initOverrides) {
     const requestOptions = await this.searchMemoriesRequestOpts(requestParameters);
     const response = await this.request(requestOptions, initOverrides);
-    return new JSONApiResponse(response, (jsonValue) => MemorySearchMemoriesResponseFromJSON(jsonValue));
+    return new JSONApiResponse(response, (jsonValue) => SearchMemoriesResponseFromJSON(jsonValue));
   }
   /**
    * Search memories with quota and rate limit enforcement
@@ -675,45 +773,49 @@ var SDKMemoryApi = class extends BaseAPI {
 };
 var SmriteaError = class extends Error {
   statusCode;
-  constructor(message, statusCode) {
+  errorCode;
+  body;
+  constructor(message, statusCode, errorCode, body) {
     super(message);
     this.name = "SmriteaError";
     this.statusCode = statusCode;
+    this.errorCode = errorCode ?? "INTERNAL_ERROR";
+    this.body = body;
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaAuthError = class extends SmriteaError {
-  constructor(message, statusCode) {
-    super(message, statusCode ?? 401);
+  constructor(message, statusCode, errorCode, body) {
+    super(message, statusCode ?? 401, errorCode, body);
     this.name = "SmriteaAuthError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaNotFoundError = class extends SmriteaError {
-  constructor(message, statusCode) {
-    super(message, statusCode ?? 404);
+  constructor(message, statusCode, errorCode, body) {
+    super(message, statusCode ?? 404, errorCode, body);
     this.name = "SmriteaNotFoundError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaValidationError = class extends SmriteaError {
-  constructor(message, statusCode) {
-    super(message, statusCode ?? 400);
+  constructor(message, statusCode, errorCode, body) {
+    super(message, statusCode ?? 400, errorCode, body);
     this.name = "SmriteaValidationError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaQuotaError = class extends SmriteaError {
-  constructor(message, statusCode) {
-    super(message, statusCode ?? 402);
+  constructor(message, statusCode, errorCode, body) {
+    super(message, statusCode ?? 402, errorCode, body);
     this.name = "SmriteaQuotaError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaRateLimitError = class extends SmriteaError {
   retryAfter;
-  constructor(message, statusCode, retryAfter) {
-    super(message, statusCode ?? 429);
+  constructor(message, statusCode, retryAfter, errorCode, body) {
+    super(message, statusCode ?? 429, errorCode, body);
     this.name = "SmriteaRateLimitError";
     this.retryAfter = retryAfter;
     Object.setPrototypeOf(this, new.target.prototype);
@@ -728,14 +830,12 @@ var SmriteaClient = class {
     this.appId = config.appId;
     this.maxRetries = config.maxRetries ?? 2;
     const configuration = new Configuration({
-      basePath: config.baseUrl?.replace(/\/$/, "") ?? "https://api.smritea.ai",
+      basePath: config.baseUrl?.replace(/\/$/, "") ?? "https://api-us.smritea.ai",
       apiKey: config.apiKey
     });
     this.api = new SDKMemoryApi(configuration);
   }
   async add(content, options) {
-    const actorId = options?.userId ?? options?.actorId;
-    const actorType = options?.userId !== void 0 ? "user" : options?.actorType;
     if (options?.metadata !== void 0) {
       const m = options.metadata;
       if (typeof m !== "object" || m === null || Array.isArray(m)) {
@@ -747,32 +847,46 @@ var SmriteaClient = class {
         request: {
           appId: this.appId,
           content,
-          actorId,
-          actorType,
-          actorName: options?.actorName,
+          scope: options?.scope ? {
+            actorId: options.scope.actorId,
+            actorType: options.scope.actorType,
+            actorName: options.scope.actorName,
+            conversationId: options.scope.conversationId,
+            sourceType: options.scope.sourceType,
+            participantIds: options.scope.participantIds
+          } : void 0,
           metadata: options?.metadata,
-          conversationId: options?.conversationId
+          eventOccurredAt: options?.eventOccurredAt,
+          relativeStanding: options?.relativeStanding ? {
+            importance: options.relativeStanding.importance,
+            decayFactor: options.relativeStanding.decayFactor,
+            decayFunction: options.relativeStanding.decayFunction
+          } : void 0
         }
       })
     );
   }
   async search(query, options) {
-    const actorId = options?.userId ?? options?.actorId;
-    const actorType = options?.userId !== void 0 ? "user" : options?.actorType;
     const response = await this.withRetry(
       () => this.api.searchMemories({
         request: {
           appId: this.appId,
           query,
-          actorId,
-          actorType,
+          scope: options?.scope ? {
+            actorId: options.scope.actorId,
+            actorType: options.scope.actorType,
+            conversationId: options.scope.conversationId,
+            participantIds: options.scope.participantIds
+          } : void 0,
           limit: options?.limit,
           threshold: options?.threshold,
           graphDepth: options?.graphDepth,
-          conversationId: options?.conversationId,
           fromTime: options?.fromTime,
           toTime: options?.toTime,
-          validAt: options?.validAt
+          validAt: options?.validAt,
+          method: options?.method,
+          rerankerType: options?.rerankerType,
+          metadataFilter: options?.metadataFilter
         }
       })
     );
@@ -813,7 +927,7 @@ var SmriteaClient = class {
           );
           continue;
         }
-        this.handleError(err);
+        await this.handleError(err);
       }
     }
     throw new Error("unreachable");
@@ -834,41 +948,68 @@ var SmriteaClient = class {
     const parsed = parseInt(header, 10);
     return isNaN(parsed) ? void 0 : parsed;
   }
-  handleError(err) {
+  async handleError(err) {
     if (err instanceof ResponseError) {
       const status = err.response.status;
-      const message = err.message;
+      const errorData = await this.extractErrorData(err.response);
+      const message = errorData.message || err.message;
+      const errorCode = errorData.code;
+      const body = errorData.body;
       switch (status) {
         case 400:
-          throw new SmriteaValidationError(message, status);
+          throw new SmriteaValidationError(message, status, errorCode, body);
         case 401:
-          throw new SmriteaAuthError(message, status);
+          throw new SmriteaAuthError(message, status, errorCode, body);
         case 402:
-          throw new SmriteaQuotaError(message, status);
+          throw new SmriteaQuotaError(message, status, errorCode, body);
         case 404:
-          throw new SmriteaNotFoundError(message, status);
+          throw new SmriteaNotFoundError(message, status, errorCode, body);
         case 429:
-          throw new SmriteaRateLimitError(message, status, this.parseRetryAfter(err.response));
+          throw new SmriteaRateLimitError(message, status, this.parseRetryAfter(err.response), errorCode, body);
         default:
-          throw new SmriteaError(message, status);
+          throw new SmriteaError(message, status, errorCode, body);
       }
     }
     throw new SmriteaError(String(err));
+  }
+  /** Attempt to extract error data ("message" and "code" fields) from the response body JSON. */
+  async extractErrorData(response) {
+    try {
+      const body = await response.clone().json();
+      if (body && typeof body === "object") {
+        const message = body.message;
+        const code = body.code;
+        if (typeof message === "string" && message) {
+          return {
+            message,
+            code: typeof code === "string" ? code : void 0,
+            body
+          };
+        }
+      }
+      return { message: "", body };
+    } catch {
+    }
+    return { message: "" };
   }
 };
 
 // scripts/context-hook.js
 async function main() {
-  const { apiKey, baseUrl, appId } = resolveConfig();
-  if (!apiKey) {
-    console.log("[smritea] Not configured. Run /smritea:login to set up.");
-    process.exit(0);
-  }
-  if (!appId) {
+  const { dataBaseUrl, selectedAppAPIKey, selectedAppId } = resolveConfig();
+  if (!selectedAppId) {
     console.log("[smritea] No app selected. Run /smritea:config to set an app.");
     process.exit(0);
   }
-  const client = new SmriteaClient({ apiKey, appId, baseUrl });
+  if (!selectedAppAPIKey) {
+    console.log("[smritea] Not configured. Run /smritea:login to set up.");
+    process.exit(0);
+  }
+  const client = new SmriteaClient({
+    apiKey: selectedAppAPIKey,
+    appId: selectedAppId,
+    baseUrl: dataBaseUrl
+  });
   const results = await client.search("session context relevant memories", { limit: 10 });
   const context = formatContext(results);
   if (context) {

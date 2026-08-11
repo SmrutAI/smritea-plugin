@@ -4,37 +4,43 @@ description: Configure SmriTea plugin settings for this project
 
 Show and update SmriTea plugin configuration for this project.
 
-Steps:
-1. Read `.smritea/config.json` if it exists (project-level config)
-2. Read `~/.smritea/credentials.json` if it exists (global credentials)
-3. Show current settings in a clear table:
-   - `app_id`: from project config (or "not set")
-   - `base_url`: from project config, or global, or default `https://api.smritea.ai`
-   - `api_key`: from project config or global — show only first 8 chars + "..." (masked)
+Read these files when they exist:
+- `~/.smritea/auth.json`
+- `~/.smritea/config.json`
+- `.smritea/config.json`
 
-Note: Settings are resolved with this priority (highest first):
-- Environment variables (`SMRITEA_API_KEY`, `SMRITEA_BASE_URL`, `SMRITEA_APP_ID`)
-- Project config (`.smritea/config.json`)
-- Global credentials (`~/.smritea/credentials.json`)
-- Built-in defaults (`https://api.smritea.ai`)
+Show the current state in a clear table with these rows:
+- `login_status`
+- `selected_app_id`
+- `selected_app_name`
+- `selected_app_api_key`
+- `project_name`
 
-4. If the user wants to change the app, use the `select_app` MCP tool to list and select an app
-5. For other settings (base_url, api_key), write them directly to the appropriate config file:
-   - Project-specific overrides → `.smritea/config.json`
-   - Global credentials → `~/.smritea/credentials.json`
+Use these sources:
+- `login_status` from `~/.smritea/auth.json` token presence
+- `selected_app_id` from `~/.smritea/config.json`
+- `selected_app_name` from `~/.smritea/auth.json.apps[selected_app_id].app_name`
+- `selected_app_api_key` from `~/.smritea/auth.json.apps[selected_app_id].api_key`
+- `project_name` from `.smritea/config.json`
 
-Config file format for `.smritea/config.json`:
-```json
-{
-  "appId": "app_...",
-  "baseUrl": "https://api.smritea.ai"
-}
-```
+Mask API keys in the table. Show only the first 8 characters, then `...`.
+Show `not set` when a value does not exist.
 
-Config file format for `~/.smritea/credentials.json`:
-```json
-{
-  "apiKey": "smr_...",
-  "baseUrl": "https://api.smritea.ai"
-}
-```
+Rules:
+1. Keep auth state only in `~/.smritea/auth.json`
+2. Keep selected app and user-level config only in `~/.smritea/config.json`
+3. Keep project metadata only in `.smritea/config.json`
+4. Do not treat auth state as project metadata
+5. Do not emphasize base URLs or old API-key-first setup
+
+If no selected app exists:
+1. Use the MCP app-selection flow to list apps
+2. Ask the user to choose one
+3. Write the selected app ID to `~/.smritea/config.json`
+
+If the selected app has no API key:
+1. Create a new API key for that app through the Studio JWT-backed MCP flow
+2. Persist it in `~/.smritea/auth.json`
+3. Keep project metadata separate in `.smritea/config.json`
+
+Let the user update project metadata separately from auth state.

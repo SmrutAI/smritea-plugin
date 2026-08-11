@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { homedir } from 'node:os';
 
 /**
@@ -17,36 +17,77 @@ function readJsonFile(filePath) {
 }
 
 /**
- * Resolve SmriTea plugin configuration using 3-tier priority:
- *   1. Environment variables
- *   2. .smritea/config.json (project-level, relative to cwd)
- *   3. ~/.smritea/credentials.json (global)
- *   4. Hardcoded defaults
+ * Resolve SmriTea plugin configuration.
  *
- * Never throws. Always returns { apiKey, baseUrl, appId } with nulls for unconfigured values.
+ * Never throws. Returns a merged config from:
+ * 1. environment variables
+ * 2. ~/.smritea/auth.json
+ * 3. ~/.smritea/config.json
+ * 4. project .smritea/config.json
+ * 5. hardcoded URL defaults
  *
- * @returns {{ apiKey: string|null, baseUrl: string, appId: string|null }}
+ * credentials.json is not used.
+ *
+ * @returns {{
+ *   studioAccessToken: string|null,
+ *   selectedAppId: string|null,
+ *   selectedAppAPIKey: string|null,
+ *   projectName: string|null,
+ *   dataBaseUrl: string,
+ *   studioBaseUrl: string,
+ *   apiKey: string|null,
+ *   appId: string|null,
+ * }}
  */
 export function resolveConfig() {
+  const authConfig = readJsonFile(join(homedir(), '.smritea', 'auth.json'));
+  const globalConfig = readJsonFile(join(homedir(), '.smritea', 'config.json'));
   const projectConfig = readJsonFile(join(process.cwd(), '.smritea', 'config.json'));
-  const globalConfig = readJsonFile(join(homedir(), '.smritea', 'credentials.json'));
 
-  const apiKey =
-    process.env.SMRITEA_API_KEY ||
-    projectConfig?.apiKey ||
-    globalConfig?.apiKey ||
-    null;
+  const studioAccessToken =
+    process.env.SMRITEA_STUDIO_ACCESS_TOKEN ||
+    (typeof authConfig?.access_token === 'string' && authConfig.access_token.trim() !== ''
+      ? authConfig.access_token
+      : null);
 
-  const baseUrl =
-    process.env.SMRITEA_BASE_URL ||
-    projectConfig?.baseUrl ||
-    globalConfig?.baseUrl ||
-    'https://api.smritea.ai';
-
-  const appId =
+  const selectedAppId =
     process.env.SMRITEA_APP_ID ||
-    projectConfig?.appId ||
-    null;
+    (typeof globalConfig?.selected_app_id === 'string' && globalConfig.selected_app_id.trim() !== ''
+      ? globalConfig.selected_app_id
+      : null);
 
-  return { apiKey, baseUrl, appId };
+  const selectedAppAPIKey =
+    process.env.SMRITEA_API_KEY ||
+    (selectedAppId && authConfig?.apps && typeof authConfig.apps === 'object'
+      ? authConfig.apps[selectedAppId]?.api_key || null
+      : null);
+
+  const projectName =
+    process.env.SMRITEA_PROJECT_NAME ||
+    (typeof projectConfig?.project === 'string' && projectConfig.project.trim() !== ''
+      ? projectConfig.project
+      : basename(process.cwd()));
+
+  const dataBaseUrl =
+    process.env.SMRITEA_BASE_URL ||
+    (typeof globalConfig?.base_url === 'string' && globalConfig.base_url.trim() !== ''
+      ? globalConfig.base_url
+      : 'https://api-us.smritea.ai');
+
+  const studioBaseUrl =
+    process.env.SMRITEA_STUDIO_BASE_URL ||
+    (typeof globalConfig?.studio_base_url === 'string' && globalConfig.studio_base_url.trim() !== ''
+      ? globalConfig.studio_base_url
+      : 'https://api.smritea.ai');
+
+  return {
+    studioAccessToken,
+    selectedAppId,
+    selectedAppAPIKey,
+    projectName,
+    dataBaseUrl,
+    studioBaseUrl,
+    apiKey: selectedAppAPIKey,
+    appId: selectedAppId,
+  };
 }

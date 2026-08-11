@@ -44,9 +44,9 @@ Run in your AI coding assistant:
 /smritea:login
 ```
 
-Follow the prompts to enter your API key (get one at https://app.smritea.ai → Settings → API Keys).
+This opens the browser, authenticates against your Studio account through `smritea-mcp login`, and saves Studio tokens to `~/.smritea/auth.json`.
 
-### 3. Select an app
+### 4. Select an app
 
 ```
 /smritea:config
@@ -72,49 +72,35 @@ If configured correctly, this will search your memories and show results (or "no
 
 ## Commands
 
-| Command                         | Description                                                           |
-|---------------------------------|-----------------------------------------------------------------------|
-| `/smritea:login`                | Set up API key and base URL (stored in `~/.smritea/credentials.json`) |
-| `/smritea:config`               | View and update project settings (stored in `.smritea/config.json`)   |
-| `/smritea:add-memory <text>`    | Save a memory to SmriTea for the current project/app                  |
-| `/smritea:recall <topic>`       | Search memories for context relevant to a topic                       |
+| Command                         | Description |
+|---------------------------------|-------------|
+| `/smritea:login`                | Run browser-based Studio login and save tokens to `~/.smritea/auth.json` |
+| `/smritea:config`               | View and update selected app and project metadata |
+| `/smritea:add-memory <text>`    | Save a memory to SmriTea for the current project/app |
+| `/smritea:recall <topic>`       | Search memories for context relevant to a topic |
 
 ## Configuration
 
-The plugin uses a 3-tier config resolution (highest priority first):
+The plugin now splits auth, user-level selection, and project metadata.
 
-| Setting  | Env Var            | Project File           | Global File                   | Default                  |
-|----------|--------------------|------------------------|-------------------------------|--------------------------|
-| API Key  | `SMRITEA_API_KEY`  | `.smritea/config.json` | `~/.smritea/credentials.json` | —                        |
-| Base URL | `SMRITEA_BASE_URL` | `.smritea/config.json` | `~/.smritea/credentials.json` | `https://api.smritea.ai` |
-| App ID   | `SMRITEA_APP_ID`   | `.smritea/config.json` | —                             | —                        |
+| File | Purpose |
+|------|---------|
+| `~/.smritea/auth.json` | Studio access/refresh tokens and per-app API keys |
+| `~/.smritea/config.json` | Selected app ID and user-level config |
+| `.smritea/config.json` | Project metadata only |
 
-### `~/.smritea/credentials.json` (global)
+The runtime hook resolves the selected app ID first, then loads the selected app API key from `~/.smritea/auth.json`. It no longer depends on `credentials.json` or the old API-key-first setup.
 
-```json
-{
-  "apiKey": "smr_...",
-  "baseUrl": "https://api.smritea.ai"
-}
-```
-
-### `.smritea/config.json` (project)
-
-```json
-{
-  "appId": "app_...",
-  "baseUrl": "https://api.smritea.ai"
-}
-```
+Environment overrides still apply for `SMRITEA_API_KEY`, `SMRITEA_APP_ID`, `SMRITEA_BASE_URL`, and `SMRITEA_STUDIO_BASE_URL`.
 
 ## How the SessionStart Hook Works
 
 On every new session, the hook:
 
-1. Resolves config (env → project → global)
-2. If not configured, prints a setup reminder and exits
-3. Searches for relevant memories using the SmriTea SDK
-4. Formats results into `<smritea-context>` XML injected as system context
+1. Resolves Studio auth, selected app, and project metadata
+2. Stops early if no selected app or selected app API key exists
+3. Builds the dataplane `SmriteaClient` from the selected app API key and app ID
+4. Searches for relevant memories and formats them into `<smritea-context>`
 
 ## Cursor Support
 

@@ -6,19 +6,23 @@ import { formatContext } from './lib/format-context.js';
 import { SmriteaClient } from 'smritea-sdk';
 
 async function main() {
-  const { apiKey, baseUrl, appId } = resolveConfig();
+  const { dataBaseUrl, selectedAppAPIKey, selectedAppId } = resolveConfig();
 
-  if (!apiKey) {
-    console.log('[smritea] Not configured. Run /smritea:login to set up.');
-    process.exit(0);
-  }
-
-  if (!appId) {
+  if (!selectedAppId) {
     console.log('[smritea] No app selected. Run /smritea:config to set an app.');
     process.exit(0);
   }
 
-  const client = new SmriteaClient({ apiKey, appId, baseUrl });
+  if (!selectedAppAPIKey) {
+    console.log('[smritea] Not configured. Run /smritea:login to set up.');
+    process.exit(0);
+  }
+
+  const client = new SmriteaClient({
+    apiKey: selectedAppAPIKey,
+    appId: selectedAppId,
+    baseUrl: dataBaseUrl,
+  });
   const results = await client.search('session context relevant memories', { limit: 10 });
   const context = formatContext(results);
 
