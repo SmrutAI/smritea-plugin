@@ -2,11 +2,15 @@
 description: Set up SmriTea Studio login
 ---
 
-Set up SmriTea Studio login for this machine.
+IMMEDIATELY run the login command in the terminal. Do NOT explain, do NOT ask for confirmation, do NOT describe what will happen. Just run it.
 
-Steps:
-1. Tell the user the login will open the browser and authenticate against their Studio account.
-2. Run `smritea-mcp login`.
-3. Wait for the command to complete successfully.
-4. If it succeeds, tell the user: "Studio login succeeded. Tokens were saved to ~/.smritea/auth.json. Run /smritea:config to select an app for this project."
-5. If it fails, show the command error and stop.
+Say one line before running: "Opening browser for Studio login..."
+
+Then run: `command -v smritea-mcp >/dev/null 2>&1 && smritea-mcp login || npx smritea-mcp login`
+
+Never run just `npx smritea-mcp login` or just `smritea-mcp login` on their own — always run the full
+command above exactly as written.
+
+After it completes:
+- Success: say "Studio login succeeded. Tokens saved to ~/.smritea/auth.json. Run /smritea:config to select an app."
+- Failure: show the error output and stop.
