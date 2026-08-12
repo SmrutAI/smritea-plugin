@@ -1,35 +1,174 @@
-// scripts/lib/settings.js
-import { readFileSync } from "node:fs";
-import { basename, join } from "node:path";
-import { homedir } from "node:os";
-function readJsonFile(filePath) {
-  try {
-    const raw = readFileSync(filePath, "utf8");
-    return JSON.parse(raw);
-  } catch {
-    return null;
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
+var __commonJS = (cb, mod) => function __require2() {
+  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
   }
-}
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+
+// ../smritea-mcp/dist/config.js
+var require_config = __commonJS({
+  "../smritea-mcp/dist/config.js"(exports, module) {
+    "use strict";
+    var __defProp2 = Object.defineProperty;
+    var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
+    var __getOwnPropNames2 = Object.getOwnPropertyNames;
+    var __hasOwnProp2 = Object.prototype.hasOwnProperty;
+    var __export = (target, all) => {
+      for (var name in all)
+        __defProp2(target, name, { get: all[name], enumerable: true });
+    };
+    var __copyProps2 = (to, from, except, desc) => {
+      if (from && typeof from === "object" || typeof from === "function") {
+        for (let key of __getOwnPropNames2(from))
+          if (!__hasOwnProp2.call(to, key) && key !== except)
+            __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+      }
+      return to;
+    };
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var config_exports = {};
+    __export(config_exports, {
+      ensureSettingsFile: () => ensureSettingsFile,
+      getAuthFilePath: () => getAuthFilePath,
+      getSettingsPathForScope: () => getSettingsPathForScope,
+      isDevConfigEnabled: () => isDevConfigEnabled,
+      loadConfig: () => loadConfig2,
+      readSettingsFile: () => readSettingsFile,
+      readSettingsFileAt: () => readSettingsFileAt,
+      writeSettingsFile: () => writeSettingsFile,
+      writeSettingsFileAt: () => writeSettingsFileAt
+    });
+    module.exports = __toCommonJS(config_exports);
+    var import_node_fs = __require("fs");
+    var import_node_os = __require("os");
+    var import_node_path = __require("path");
+    var DEFAULT_MEMORY_BASE_URL = "https://api-us.smritea.ai";
+    var DEFAULT_STUDIO_BASE_URL = "https://api.smritea.ai";
+    var AUTH_CONFIG_PATH = (0, import_node_path.join)((0, import_node_os.homedir)(), ".smritea", "auth.json");
+    function isDevConfigEnabled() {
+      const v = process.env["SMRITEA_DEV_CONFIG"];
+      return v !== void 0 && v !== "" && v !== "0" && v.toLowerCase() !== "false";
+    }
+    function settingsFileName() {
+      return isDevConfigEnabled() ? "settings.dev.json" : "settings.json";
+    }
+    function resolveSettingsPath() {
+      const fileName = settingsFileName();
+      const projectPath = (0, import_node_path.join)(process.cwd(), ".smritea", fileName);
+      if ((0, import_node_fs.existsSync)(projectPath)) {
+        return projectPath;
+      }
+      return (0, import_node_path.join)((0, import_node_os.homedir)(), ".smritea", fileName);
+    }
+    function readJsonFile(path) {
+      if (!(0, import_node_fs.existsSync)(path)) return null;
+      const raw = (0, import_node_fs.readFileSync)(path, "utf-8");
+      return JSON.parse(raw);
+    }
+    function writeJsonFile(path, value) {
+      (0, import_node_fs.writeFileSync)(path, JSON.stringify(value, null, 2) + "\n", "utf-8");
+    }
+    function ensureSettingsFile() {
+      const path = resolveSettingsPath();
+      if ((0, import_node_fs.existsSync)(path)) {
+        return;
+      }
+      const defaults = {
+        studio_base_url: DEFAULT_STUDIO_BASE_URL,
+        memory_base_url: DEFAULT_MEMORY_BASE_URL
+      };
+      (0, import_node_fs.mkdirSync)((0, import_node_path.join)(path, ".."), { recursive: true });
+      writeJsonFile(path, defaults);
+    }
+    function readSettingsFile() {
+      return readJsonFile(resolveSettingsPath());
+    }
+    function writeSettingsFile(value) {
+      writeJsonFile(resolveSettingsPath(), value);
+    }
+    function getSettingsPathForScope(scope) {
+      const fileName = settingsFileName();
+      return scope === "user" ? (0, import_node_path.join)((0, import_node_os.homedir)(), ".smritea", fileName) : (0, import_node_path.join)(process.cwd(), ".smritea", fileName);
+    }
+    function readSettingsFileAt(path) {
+      return readJsonFile(path);
+    }
+    function writeSettingsFileAt(path, value) {
+      writeJsonFile(path, value);
+    }
+    function readAuthFile() {
+      return readJsonFile(getAuthFilePath());
+    }
+    function getAuthFilePath() {
+      const settings = readSettingsFile();
+      if (settings?.auth_file_path) {
+        return settings.auth_file_path;
+      }
+      return AUTH_CONFIG_PATH;
+    }
+    function loadConfig2() {
+      const auth = readAuthFile();
+      const settings = readSettingsFile();
+      const selectedAppId = settings?.selected_app_id;
+      const selectedAppAPIKey = selectedAppId ? auth?.apps?.[selectedAppId]?.api_key : void 0;
+      const memoryBaseUrl = settings?.memory_base_url ?? DEFAULT_MEMORY_BASE_URL;
+      const studioBaseUrl = settings?.studio_base_url ?? DEFAULT_STUDIO_BASE_URL;
+      const firstPersonUserId = auth?.user_id ?? (selectedAppId ? auth?.apps?.[selectedAppId]?.first_person_user_id : void 0);
+      return {
+        studioAccessToken: auth?.access_token,
+        studioRefreshToken: auth?.refresh_token,
+        selectedAppId,
+        selectedAppAPIKey,
+        memoryBaseUrl,
+        studioBaseUrl,
+        projectName: settings?.project_name,
+        firstPersonUserId,
+        apiKey: selectedAppAPIKey,
+        appId: selectedAppId
+      };
+    }
+  }
+});
+
+// scripts/lib/settings.js
+var import_config = __toESM(require_config(), 1);
 function resolveConfig() {
-  const authConfig = readJsonFile(join(homedir(), ".smritea", "auth.json"));
-  const globalConfig = readJsonFile(join(homedir(), ".smritea", "config.json"));
-  const projectConfig = readJsonFile(join(process.cwd(), ".smritea", "config.json"));
-  const studioAccessToken = process.env.SMRITEA_STUDIO_ACCESS_TOKEN || (typeof authConfig?.access_token === "string" && authConfig.access_token.trim() !== "" ? authConfig.access_token : null);
-  const selectedAppId = process.env.SMRITEA_APP_ID || (typeof globalConfig?.selected_app_id === "string" && globalConfig.selected_app_id.trim() !== "" ? globalConfig.selected_app_id : null);
-  const selectedAppAPIKey = process.env.SMRITEA_API_KEY || (selectedAppId && authConfig?.apps && typeof authConfig.apps === "object" ? authConfig.apps[selectedAppId]?.api_key || null : null);
-  const projectName = process.env.SMRITEA_PROJECT_NAME || (typeof projectConfig?.project === "string" && projectConfig.project.trim() !== "" ? projectConfig.project : basename(process.cwd()));
-  const dataBaseUrl = process.env.SMRITEA_BASE_URL || (typeof globalConfig?.base_url === "string" && globalConfig.base_url.trim() !== "" ? globalConfig.base_url : "https://api-us.smritea.ai");
-  const studioBaseUrl = process.env.SMRITEA_STUDIO_BASE_URL || (typeof globalConfig?.studio_base_url === "string" && globalConfig.studio_base_url.trim() !== "" ? globalConfig.studio_base_url : "https://api.smritea.ai");
-  return {
-    studioAccessToken,
-    selectedAppId,
-    selectedAppAPIKey,
-    projectName,
-    dataBaseUrl,
-    studioBaseUrl,
-    apiKey: selectedAppAPIKey,
-    appId: selectedAppId
-  };
+  try {
+    return (0, import_config.loadConfig)();
+  } catch {
+    return {
+      selectedAppId: void 0,
+      selectedAppAPIKey: void 0,
+      projectName: void 0,
+      memoryBaseUrl: "https://api-us.smritea.ai",
+      studioBaseUrl: "https://api.smritea.ai"
+    };
+  }
 }
 
 // scripts/lib/format-context.js
@@ -996,21 +1135,25 @@ var SmriteaClient = class {
 
 // scripts/context-hook.js
 async function main() {
-  const { dataBaseUrl, selectedAppAPIKey, selectedAppId } = resolveConfig();
+  const { memoryBaseUrl, selectedAppAPIKey, selectedAppId, projectName } = resolveConfig();
   if (!selectedAppId) {
-    console.log("[smritea] No app selected. Run /smritea:config to set an app.");
+    console.log("[smritea] No app selected. Run `smritea-mcp configure` to set an app.");
     process.exit(0);
   }
   if (!selectedAppAPIKey) {
-    console.log("[smritea] Not configured. Run /smritea:login to set up.");
+    console.log("[smritea] Not configured. Run `smritea-mcp login` to set up.");
     process.exit(0);
   }
   const client = new SmriteaClient({
     apiKey: selectedAppAPIKey,
     appId: selectedAppId,
-    baseUrl: dataBaseUrl
+    baseUrl: memoryBaseUrl
   });
-  const results = await client.search("session context relevant memories", { limit: 10 });
+  const searchOptions = { limit: 10 };
+  if (projectName) {
+    searchOptions.metadataFilter = { project_name: projectName };
+  }
+  const results = await client.search("session context relevant memories", searchOptions);
   const context = formatContext(results);
   if (context) {
     console.log(context);

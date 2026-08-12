@@ -5,6 +5,7 @@
   "type": "module",
   "private": true,
   "dependencies": {
+    "smritea-mcp": "file:../smritea-mcp",
     "smritea-sdk": "file:../../polyglot/smritea-sdk/typescript"
   },
   "scripts": {
