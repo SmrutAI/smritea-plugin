@@ -6,12 +6,18 @@ alwaysApply: true
 
 # SmriTea Memory Rules
 
+## Setup
+
+If `add_memory` or `search_memories` fails with an auth error:
+1. Run `smritea-mcp login` in the terminal to authenticate via Studio OAuth.
+2. Run `smritea-mcp configure` in the terminal to select an app and set a project name.
+
 ## At Conversation Start
 
 When starting any new conversation or task:
 1. Call `search_memories` with a query describing the current task or topic, `limit: 10`
 2. If relevant memories are found, incorporate them naturally into your understanding
-4. Do NOT repeat memories verbatim — use them as background context
+3. Do NOT repeat memories verbatim — use them as background context
 
 ## When to Store Memories
 
