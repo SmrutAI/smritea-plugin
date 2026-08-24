@@ -4,9 +4,24 @@ title: SmriTea Plugin for Claude Code and Cursor
 status: stable
 tags:
 - readme
+stale_after: 2026-12-31
+generated:
+  by: Tushar Dwivedi
+  at: 2026-08-25T00:00:00Z
 ---
 
 # SmriTea Plugin for Claude Code and Cursor
+
+
+| Section | What it covers |
+|---------|----------------|
+| [What It Does](#what-it-does) | SessionStart hook: Automatically fetches relevant memories at the start of each session… |
+| [Installation](#installation) | Installation |
+| [Commands](#commands) | Commands |
+| [Configuration](#configuration) | The plugin now splits auth, user-level selection, and project metadata. |
+| [How the SessionStart Hook Works](#how-the-sessionstart-hook-works) | On every new session, the hook: |
+| [Cursor Support](#cursor-support) | Cursor config lives in cursor/. Copy or symlink the relevant files to your Cursor config… |
+| [License](#license) | Apache-2.0 — Copyright 2026 Bytonomics LLP |
 
 Persistent AI memory across sessions — store, search, and recall context automatically.
 
