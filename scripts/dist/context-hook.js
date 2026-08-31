@@ -60,6 +60,7 @@ var require_config = __commonJS({
       loadConfig: () => loadConfig2,
       readSettingsFile: () => readSettingsFile,
       readSettingsFileAt: () => readSettingsFileAt,
+      verifyUserSetup: () => verifyUserSetup,
       writeSettingsFile: () => writeSettingsFile,
       writeSettingsFileAt: () => writeSettingsFileAt
     });
@@ -139,6 +140,8 @@ var require_config = __commonJS({
       const memoryBaseUrl = settings?.memory_base_url ?? DEFAULT_MEMORY_BASE_URL;
       const studioBaseUrl = settings?.studio_base_url ?? DEFAULT_STUDIO_BASE_URL;
       const firstPersonUserId = auth?.user_id ?? (selectedAppId ? auth?.apps?.[selectedAppId]?.first_person_user_id : void 0);
+      const firstPersonEmail = auth?.email;
+      const actorName = settings?.actor_name;
       return {
         studioAccessToken: auth?.access_token,
         studioRefreshToken: auth?.refresh_token,
@@ -147,9 +150,42 @@ var require_config = __commonJS({
         memoryBaseUrl,
         studioBaseUrl,
         projectName: settings?.project_name,
+        actorName,
         firstPersonUserId,
+        firstPersonEmail,
         apiKey: selectedAppAPIKey,
         appId: selectedAppId
+      };
+    }
+    function verifyUserSetup() {
+      const userSettingsPath = getSettingsPathForScope("user");
+      const settings = readSettingsFileAt(userSettingsPath);
+      const userAuthPath = settings?.auth_file_path ?? AUTH_CONFIG_PATH;
+      const auth = readJsonFile(userAuthPath);
+      const loggedIn = auth?.access_token !== void 0 && auth.access_token.length > 0 && auth.email !== void 0;
+      const selectedAppId = settings?.selected_app_id;
+      const hasApiKey = selectedAppId !== void 0 && auth?.apps?.[selectedAppId]?.api_key !== void 0;
+      const actorName = settings?.actor_name !== void 0 && settings.actor_name.trim().length > 0 ? settings.actor_name : void 0;
+      const projectName = settings?.project_name !== void 0 && settings.project_name.trim().length > 0 ? settings.project_name : void 0;
+      const missing = [];
+      if (!loggedIn) missing.push("Not logged in \u2014 run `smritea-mcp login`.");
+      if (selectedAppId === void 0) missing.push("No app selected \u2014 run `smritea-mcp configure`.");
+      else if (!hasApiKey) missing.push("Selected app has no API key \u2014 re-run `smritea-mcp configure`.");
+      if (actorName === void 0) missing.push("Your name is not set \u2014 run `smritea-mcp configure`.");
+      if (projectName === void 0) missing.push("Project name is not set \u2014 run `smritea-mcp configure`.");
+      const canOperate = loggedIn && selectedAppId !== void 0 && hasApiKey;
+      return {
+        ok: missing.length === 0,
+        canOperate,
+        loggedIn,
+        email: auth?.email,
+        selectedAppId,
+        hasApiKey,
+        actorName,
+        projectName,
+        missing,
+        userSettingsPath,
+        userAuthPath
       };
     }
   }
@@ -738,6 +774,7 @@ function SearchMemoryRequestToJSONTyped(value, ignoreDiscriminator = false) {
     "query": value["query"],
     "reranker_type": RerankerTypeToJSON(value["rerankerType"]),
     "scope": MemoryScopeToJSON(value["scope"]),
+    "speaker_actor_id": value["speakerActorId"],
     "threshold": value["threshold"],
     "to_time": value["toTime"],
     "valid_at": value["validAt"]
@@ -993,7 +1030,7 @@ var SmriteaClient = class {
             conversationId: options.scope.conversationId,
             sourceType: options.scope.sourceType,
             participantIds: options.scope.participantIds
-          } : void 0,
+          } : {},
           metadata: options?.metadata,
           eventOccurredAt: options?.eventOccurredAt,
           relativeStanding: options?.relativeStanding ? {
@@ -1011,6 +1048,7 @@ var SmriteaClient = class {
         request: {
           appId: this.appId,
           query,
+          speakerActorId: options?.speakerActorId,
           scope: options?.scope ? {
             actorId: options.scope.actorId,
             actorType: options.scope.actorType,
