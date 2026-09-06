@@ -948,52 +948,75 @@ var SDKMemoryApi = class extends BaseAPI {
   }
 };
 var SmriteaError = class extends Error {
-  statusCode;
-  errorCode;
+  httpStatus;
+  code;
   body;
-  constructor(message, statusCode, errorCode, body) {
+  retryable;
+  constructor(message, httpStatus, code, body, retryable = false) {
     super(message);
     this.name = "SmriteaError";
-    this.statusCode = statusCode;
-    this.errorCode = errorCode ?? "INTERNAL_ERROR";
+    this.httpStatus = httpStatus;
+    this.code = code ?? "INTERNAL_ERROR";
     this.body = body;
+    this.retryable = retryable;
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
-var SmriteaAuthError = class extends SmriteaError {
-  constructor(message, statusCode, errorCode, body) {
-    super(message, statusCode ?? 401, errorCode, body);
-    this.name = "SmriteaAuthError";
+var SmriteaUnauthorizedError = class extends SmriteaError {
+  constructor(message, httpStatus, code, body, retryable = false) {
+    super(message, httpStatus ?? 401, code, body, retryable);
+    this.name = "SmriteaUnauthorizedError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaNotFoundError = class extends SmriteaError {
-  constructor(message, statusCode, errorCode, body) {
-    super(message, statusCode ?? 404, errorCode, body);
+  constructor(message, httpStatus, code, body, retryable = false) {
+    super(message, httpStatus ?? 404, code, body, retryable);
     this.name = "SmriteaNotFoundError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
-var SmriteaValidationError = class extends SmriteaError {
-  constructor(message, statusCode, errorCode, body) {
-    super(message, statusCode ?? 400, errorCode, body);
-    this.name = "SmriteaValidationError";
+var SmriteaBadRequestError = class extends SmriteaError {
+  constructor(message, httpStatus, code, body, retryable = false) {
+    super(message, httpStatus ?? 400, code, body, retryable);
+    this.name = "SmriteaBadRequestError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
-var SmriteaQuotaError = class extends SmriteaError {
-  constructor(message, statusCode, errorCode, body) {
-    super(message, statusCode ?? 402, errorCode, body);
-    this.name = "SmriteaQuotaError";
+var SmriteaPaymentRequiredError = class extends SmriteaError {
+  constructor(message, httpStatus, code, body, retryable = false) {
+    super(message, httpStatus ?? 402, code, body, retryable);
+    this.name = "SmriteaPaymentRequiredError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
-var SmriteaRateLimitError = class extends SmriteaError {
+var SmriteaTooManyRequestsError = class extends SmriteaError {
   retryAfter;
-  constructor(message, statusCode, retryAfter, errorCode, body) {
-    super(message, statusCode ?? 429, errorCode, body);
-    this.name = "SmriteaRateLimitError";
+  constructor(message, httpStatus, retryAfter, code, body, retryable = true) {
+    super(message, httpStatus ?? 429, code, body, retryable);
+    this.name = "SmriteaTooManyRequestsError";
     this.retryAfter = retryAfter;
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+};
+var SmriteaForbiddenError = class extends SmriteaError {
+  constructor(message, httpStatus, code, body, retryable = false) {
+    super(message, httpStatus ?? 403, code, body, retryable);
+    this.name = "SmriteaForbiddenError";
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+};
+var SmriteaConflictError = class extends SmriteaError {
+  constructor(message, httpStatus, code, body, retryable = false) {
+    super(message, httpStatus ?? 409, code, body, retryable);
+    this.name = "SmriteaConflictError";
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+};
+var SmriteaUnprocessableError = class extends SmriteaError {
+  constructor(message, httpStatus, code, body, retryable = false) {
+    super(message, httpStatus ?? 422, code, body, retryable);
+    this.name = "SmriteaUnprocessableError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
@@ -1015,7 +1038,7 @@ var SmriteaClient = class {
     if (options?.metadata !== void 0) {
       const m = options.metadata;
       if (typeof m !== "object" || m === null || Array.isArray(m)) {
-        throw new SmriteaValidationError("metadata must be a plain object (dictionary)", 400);
+        throw new SmriteaBadRequestError("metadata must be a plain object (dictionary)", 400);
       }
     }
     return this.withRetry(
@@ -1090,7 +1113,7 @@ var SmriteaClient = class {
    * 1. Retry-After header value (seconds), capped at 30 s.
    * 2. Exponential backoff (1 s, 2 s, 4 s, …) with ±25 % jitter, capped at 30 s.
    *
-   * After all retries are exhausted the 429 is re-raised as SmriteaRateLimitError
+   * After all retries are exhausted the 429 is re-raised as SmriteaTooManyRequestsError
    * with retryAfter populated from the final response header if available.
    */
   async withRetry(fn) {
@@ -1130,36 +1153,45 @@ var SmriteaClient = class {
       const status = err.response.status;
       const errorData = await this.extractErrorData(err.response);
       const message = errorData.message || err.message;
-      const errorCode = errorData.code;
+      const code = errorData.code;
       const body = errorData.body;
+      const retryable = errorData.retryable;
       switch (status) {
         case 400:
-          throw new SmriteaValidationError(message, status, errorCode, body);
+          throw new SmriteaBadRequestError(message, status, code, body, retryable);
         case 401:
-          throw new SmriteaAuthError(message, status, errorCode, body);
+          throw new SmriteaUnauthorizedError(message, status, code, body, retryable);
         case 402:
-          throw new SmriteaQuotaError(message, status, errorCode, body);
+          throw new SmriteaPaymentRequiredError(message, status, code, body, retryable);
+        case 403:
+          throw new SmriteaForbiddenError(message, status, code, body, retryable);
         case 404:
-          throw new SmriteaNotFoundError(message, status, errorCode, body);
+          throw new SmriteaNotFoundError(message, status, code, body, retryable);
+        case 409:
+          throw new SmriteaConflictError(message, status, code, body, retryable);
+        case 422:
+          throw new SmriteaUnprocessableError(message, status, code, body, retryable);
         case 429:
-          throw new SmriteaRateLimitError(message, status, this.parseRetryAfter(err.response), errorCode, body);
+          throw new SmriteaTooManyRequestsError(message, status, this.parseRetryAfter(err.response), code, body, true);
         default:
-          throw new SmriteaError(message, status, errorCode, body);
+          throw new SmriteaError(message, status, code, body, retryable);
       }
     }
     throw new SmriteaError(String(err));
   }
-  /** Attempt to extract error data ("message" and "code" fields) from the response body JSON. */
+  /** Attempt to extract error data ("message", "code", and "retryable" fields) from the response body JSON. */
   async extractErrorData(response) {
     try {
       const body = await response.clone().json();
       if (body && typeof body === "object") {
         const message = body.message;
         const code = body.code;
+        const retryable = body.retryable;
         if (typeof message === "string" && message) {
           return {
             message,
             code: typeof code === "string" ? code : void 0,
+            retryable: typeof retryable === "boolean" ? retryable : void 0,
             body
           };
         }

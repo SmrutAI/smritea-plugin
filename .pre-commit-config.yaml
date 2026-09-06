@@ -35,3 +35,14 @@ repos:
         language: system
         files: ^scripts/.*\.js$
         pass_filenames: false
+
+      # always_run: the committed scripts/dist bundle inlines smritea-mcp dist
+      # code, so it can go stale from changes OUTSIDE this repo — a files:
+      # pattern on plugin sources can never catch that. The smoke fails until
+      # the regenerated bundle is staged, forcing freshness on every commit.
+      - id: plugin-smoke
+        name: Publish smoke (bundle freshness + staged hook run + .mcp.json)
+        entry: make smoke
+        language: system
+        always_run: true
+        pass_filenames: false
