@@ -23,7 +23,7 @@ async function main() {
     appId: selectedAppId,
     baseUrl: memoryBaseUrl,
   });
-  const searchOptions = { limit: 10 };
+  const searchOptions = {};
   if (projectName) {
     searchOptions.metadataFilter = { project_name: projectName };
   }

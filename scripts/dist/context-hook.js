@@ -513,25 +513,7 @@ function PersonaExtractionConfigToJSONTyped(value, ignoreDiscriminator = false) 
     "actor_types": value["actorTypes"],
     "domains": value["domains"] == null ? void 0 : value["domains"].map(PersonaDomainConfigToJSON),
     "enabled": value["enabled"],
-    "max_tokens": value["maxTokens"],
-    "model": value["model"],
-    "temperature": value["temperature"]
-  };
-}
-function FactExtractionConfigToJSON(json) {
-  return FactExtractionConfigToJSONTyped(json, false);
-}
-function FactExtractionConfigToJSONTyped(value, ignoreDiscriminator = false) {
-  if (value == null) {
-    return value;
-  }
-  return {
-    "max_passes": value["maxPasses"],
-    "max_tokens": value["maxTokens"],
-    "min_importance": value["minImportance"],
-    "model": value["model"],
-    "strategy": value["strategy"],
-    "temperature": value["temperature"]
+    "model": value["model"]
   };
 }
 function RelativeStandingConfigFromJSON(json) {
@@ -592,10 +574,10 @@ function MemoryScopeToJSONTyped(value, ignoreDiscriminator = false) {
     "source_type": value["sourceType"]
   };
 }
-function EntityExtractionConfigToJSON(json) {
-  return EntityExtractionConfigToJSONTyped(json, false);
+function EntityExtractionOverridesToJSON(json) {
+  return EntityExtractionOverridesToJSONTyped(json, false);
 }
-function EntityExtractionConfigToJSONTyped(value, ignoreDiscriminator = false) {
+function EntityExtractionOverridesToJSONTyped(value, ignoreDiscriminator = false) {
   if (value == null) {
     return value;
   }
@@ -604,11 +586,21 @@ function EntityExtractionConfigToJSONTyped(value, ignoreDiscriminator = false) {
     "enable_context": value["enableContext"],
     "entity_types": value["entityTypes"],
     "fallback_messages": value["fallbackMessages"],
-    "max_passes": value["maxPasses"],
-    "max_tokens": value["maxTokens"],
     "min_confidence": value["minConfidence"],
+    "model": value["model"]
+  };
+}
+function FactExtractionOverridesToJSON(json) {
+  return FactExtractionOverridesToJSONTyped(json, false);
+}
+function FactExtractionOverridesToJSONTyped(value, ignoreDiscriminator = false) {
+  if (value == null) {
+    return value;
+  }
+  return {
+    "min_importance": value["minImportance"],
     "model": value["model"],
-    "temperature": value["temperature"]
+    "strategy": value["strategy"]
   };
 }
 function CreateMemoryRequestToJSON(json) {
@@ -621,9 +613,9 @@ function CreateMemoryRequestToJSONTyped(value, ignoreDiscriminator = false) {
   return {
     "app_id": value["appId"],
     "content": value["content"],
-    "entity_extraction_overrides": EntityExtractionConfigToJSON(value["entityExtractionOverrides"]),
+    "entity_extraction_overrides": EntityExtractionOverridesToJSON(value["entityExtractionOverrides"]),
     "event_occurred_at": value["eventOccurredAt"],
-    "fact_extraction_overrides": FactExtractionConfigToJSON(value["factExtractionOverrides"]),
+    "fact_extraction_overrides": FactExtractionOverridesToJSON(value["factExtractionOverrides"]),
     "metadata": value["metadata"],
     "persona_extraction_overrides": PersonaExtractionConfigToJSON(value["personaExtractionOverrides"]),
     "relative_standing": RelativeStandingConfigToJSON(value["relativeStanding"]),
@@ -1219,7 +1211,7 @@ async function main() {
     appId: selectedAppId,
     baseUrl: memoryBaseUrl
   });
-  const searchOptions = { limit: 10 };
+  const searchOptions = {};
   if (projectName) {
     searchOptions.metadataFilter = { project_name: projectName };
   }
