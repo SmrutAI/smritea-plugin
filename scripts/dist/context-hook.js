@@ -767,7 +767,6 @@ function SearchMemoryRequestToJSONTyped(value, ignoreDiscriminator = false) {
     "reranker_type": RerankerTypeToJSON(value["rerankerType"]),
     "scope": MemoryScopeToJSON(value["scope"]),
     "speaker_actor_id": value["speakerActorId"],
-    "threshold": value["threshold"],
     "to_time": value["toTime"],
     "valid_at": value["validAt"]
   };
@@ -1071,7 +1070,6 @@ var SmriteaClient = class {
             participantIds: options.scope.participantIds
           } : void 0,
           limit: options?.limit,
-          threshold: options?.threshold,
           graphDepth: options?.graphDepth,
           fromTime: options?.fromTime,
           toTime: options?.toTime,
