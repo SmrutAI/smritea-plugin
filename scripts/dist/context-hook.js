@@ -611,7 +611,6 @@ function CreateMemoryRequestToJSONTyped(value, ignoreDiscriminator = false) {
     return value;
   }
   return {
-    "app_id": value["appId"],
     "content": value["content"],
     "entity_extraction_overrides": EntityExtractionOverridesToJSON(value["entityExtractionOverrides"]),
     "event_occurred_at": value["eventOccurredAt"],
@@ -757,7 +756,6 @@ function SearchMemoryRequestToJSONTyped(value, ignoreDiscriminator = false) {
     return value;
   }
   return {
-    "app_id": value["appId"],
     "from_time": value["fromTime"],
     "graph_depth": value["graphDepth"],
     "limit": value["limit"],
@@ -776,6 +774,12 @@ var SDKMemoryApi = class extends BaseAPI {
    * Creates request options for createMemory without sending the request
    */
   async createMemoryRequestOpts(requestParameters) {
+    if (requestParameters["xAppID"] == null) {
+      throw new RequiredError(
+        "xAppID",
+        'Required parameter "xAppID" was null or undefined when calling createMemory().'
+      );
+    }
     if (requestParameters["request"] == null) {
       throw new RequiredError(
         "request",
@@ -785,6 +789,9 @@ var SDKMemoryApi = class extends BaseAPI {
     const queryParameters = {};
     const headerParameters = {};
     headerParameters["Content-Type"] = "application/json";
+    if (requestParameters["xAppID"] != null) {
+      headerParameters["X-App-ID"] = String(requestParameters["xAppID"]);
+    }
     if (this.configuration && this.configuration.apiKey) {
       headerParameters["X-API-Key"] = await this.configuration.apiKey("X-API-Key");
     }
@@ -818,6 +825,12 @@ var SDKMemoryApi = class extends BaseAPI {
    * Creates request options for deleteMemory without sending the request
    */
   async deleteMemoryRequestOpts(requestParameters) {
+    if (requestParameters["xAppID"] == null) {
+      throw new RequiredError(
+        "xAppID",
+        'Required parameter "xAppID" was null or undefined when calling deleteMemory().'
+      );
+    }
     if (requestParameters["memoryId"] == null) {
       throw new RequiredError(
         "memoryId",
@@ -826,6 +839,9 @@ var SDKMemoryApi = class extends BaseAPI {
     }
     const queryParameters = {};
     const headerParameters = {};
+    if (requestParameters["xAppID"] != null) {
+      headerParameters["X-App-ID"] = String(requestParameters["xAppID"]);
+    }
     if (this.configuration && this.configuration.apiKey) {
       headerParameters["X-API-Key"] = await this.configuration.apiKey("X-API-Key");
     }
@@ -858,6 +874,12 @@ var SDKMemoryApi = class extends BaseAPI {
    * Creates request options for getMemory without sending the request
    */
   async getMemoryRequestOpts(requestParameters) {
+    if (requestParameters["xAppID"] == null) {
+      throw new RequiredError(
+        "xAppID",
+        'Required parameter "xAppID" was null or undefined when calling getMemory().'
+      );
+    }
     if (requestParameters["memoryId"] == null) {
       throw new RequiredError(
         "memoryId",
@@ -866,6 +888,9 @@ var SDKMemoryApi = class extends BaseAPI {
     }
     const queryParameters = {};
     const headerParameters = {};
+    if (requestParameters["xAppID"] != null) {
+      headerParameters["X-App-ID"] = String(requestParameters["xAppID"]);
+    }
     if (this.configuration && this.configuration.apiKey) {
       headerParameters["X-API-Key"] = await this.configuration.apiKey("X-API-Key");
     }
@@ -899,6 +924,12 @@ var SDKMemoryApi = class extends BaseAPI {
    * Creates request options for searchMemories without sending the request
    */
   async searchMemoriesRequestOpts(requestParameters) {
+    if (requestParameters["xAppID"] == null) {
+      throw new RequiredError(
+        "xAppID",
+        'Required parameter "xAppID" was null or undefined when calling searchMemories().'
+      );
+    }
     if (requestParameters["request"] == null) {
       throw new RequiredError(
         "request",
@@ -908,6 +939,9 @@ var SDKMemoryApi = class extends BaseAPI {
     const queryParameters = {};
     const headerParameters = {};
     headerParameters["Content-Type"] = "application/json";
+    if (requestParameters["xAppID"] != null) {
+      headerParameters["X-App-ID"] = String(requestParameters["xAppID"]);
+    }
     if (this.configuration && this.configuration.apiKey) {
       headerParameters["X-API-Key"] = await this.configuration.apiKey("X-API-Key");
     }
@@ -1034,8 +1068,8 @@ var SmriteaClient = class {
     }
     return this.withRetry(
       () => this.api.createMemory({
+        xAppID: this.appId,
         request: {
-          appId: this.appId,
           content,
           scope: options?.scope ? {
             actorId: options.scope.actorId,
@@ -1059,8 +1093,8 @@ var SmriteaClient = class {
   async search(query, options) {
     const response = await this.withRetry(
       () => this.api.searchMemories({
+        xAppID: this.appId,
         request: {
-          appId: this.appId,
           query,
           speakerActorId: options?.speakerActorId,
           scope: options?.scope ? {
@@ -1083,10 +1117,10 @@ var SmriteaClient = class {
     return response.memories ?? [];
   }
   async get(memoryId) {
-    return this.withRetry(() => this.api.getMemory({ memoryId }));
+    return this.withRetry(() => this.api.getMemory({ xAppID: this.appId, memoryId }));
   }
   async delete(memoryId) {
-    await this.withRetry(() => this.api.deleteMemory({ memoryId }));
+    await this.withRetry(() => this.api.deleteMemory({ xAppID: this.appId, memoryId }));
   }
   async getAll(options) {
     throw new Error(
