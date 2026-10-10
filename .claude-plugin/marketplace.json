@@ -11,7 +11,7 @@
     {
       "name": "smritea",
       "description": "Persistent AI memory across sessions — store, search, and recall context automatically",
-      "version": "0.1.0",
+      "version": "0.1.12",
       "author": {
         "name": "SmrutAI"
       },

@@ -1,6 +1,6 @@
 {
   "name": "smritea-plugin",
-  "version": "0.1.0",
+  "version": "0.1.12",
   "description": "SmriTea plugin for Claude Code and Cursor",
   "type": "module",
   "private": true,
