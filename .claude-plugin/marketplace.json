@@ -20,7 +20,7 @@
       "source": {
         "source": "github",
         "repo": "SmrutAI/smritea-plugin",
-        "ref": "release"
+        "ref": "main"
       }
     }
   ]

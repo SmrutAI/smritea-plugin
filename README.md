@@ -20,7 +20,7 @@ generated:
 | [Commands](#commands) | Commands |
 | [Configuration](#configuration) | The plugin now splits auth, user-level selection, and project metadata. |
 | [How the SessionStart Hook Works](#how-the-sessionstart-hook-works) | On every new session, the hook: |
-| [Cursor Support](#cursor-support) | Cursor config lives in cursor/. Copy or symlink the relevant files to your Cursor config… |
+| [Cursor Support](#cursor-support) | Install the Cursor plugin from a team marketplace or from a local copy. |
 | [License](#license) | Apache-2.0 — Copyright 2026 Bytonomics LLP |
 
 Persistent AI memory across sessions — store, search, and recall context automatically.
@@ -119,7 +119,19 @@ On every new session, the hook:
 
 ## Cursor Support
 
-Cursor config lives in `cursor/`. Copy or symlink the relevant files to your Cursor config directory.
+The Cursor plugin lives in `cursor/` and is listed in `.cursor-plugin/marketplace.json`.
+
+### Team marketplace (Cursor Teams and Enterprise)
+
+1. An admin opens Dashboard → Plugins & MCPs → Team Marketplaces → Add Marketplace.
+2. Choose Import from Repo and paste `https://github.com/SmrutAI/smritea-plugin`.
+3. Members install the `smritea` plugin from the team marketplace.
+
+### Local install
+
+1. Copy the `cursor/` folder to `~/.cursor/plugins/local/smritea`. Copy it; a symlink loads only when its target is inside that folder.
+2. Run **Developer: Reload Window** in Cursor.
+3. On Teams and Enterprise plans an admin must allow local plugin imports.
 
 ## License
 

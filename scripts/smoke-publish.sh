@@ -39,7 +39,7 @@ trap 'rm -rf "$WORK"' EXIT
 STAGE="$WORK/plugin"
 CLEAN_HOME="$WORK/home"
 mkdir -p "$STAGE" "$CLEAN_HOME"
-for item in .claude-plugin .mcp.json hooks scripts/dist commands skills cursor LICENSE README.md; do
+for item in .claude-plugin .cursor-plugin .mcp.json hooks scripts/dist commands skills cursor LICENSE README.md; do
     if [ -e "$PLUGIN_DIR/$item" ]; then
         mkdir -p "$STAGE/$(dirname "$item")"
         cp -R "$PLUGIN_DIR/$item" "$STAGE/$item"
@@ -64,6 +64,35 @@ if (!Array.isArray(server.args) || !server.args.includes('smritea-mcp') || !serv
 }
 " || fail ".mcp.json validation failed"
 ok ".mcp.json declares 'npx smritea-mcp serve' (artifact itself is covered by smritea-mcp's make smoke)"
+
+step "Validating the Cursor marketplace index"
+# Cursor reads .cursor-plugin/marketplace.json from the repo root and resolves each entry's
+# source to <source>/.cursor-plugin/plugin.json; check that resolution on the staged copy.
+if [ ! -f "$STAGE/.cursor-plugin/marketplace.json" ]; then
+    fail ".cursor-plugin/marketplace.json missing from the staged plugin — Cursor would find no plugin"
+fi
+STAGE="$STAGE" node -e "
+const fs = require('fs');
+const path = require('path');
+const root = process.env.STAGE;
+const m = JSON.parse(fs.readFileSync(path.join(root, '.cursor-plugin', 'marketplace.json'), 'utf8'));
+if (typeof m.name !== 'string' || !m.owner || typeof m.owner.name !== 'string') throw new Error('marketplace needs name and owner.name');
+if (!Array.isArray(m.plugins) || m.plugins.length === 0) throw new Error('plugins must be a non-empty array');
+for (const p of m.plugins) {
+    if (typeof p.name !== 'string' || typeof p.source !== 'string' || p.source === '' || path.isAbsolute(p.source) || p.source.split('/').includes('..')) {
+        throw new Error('plugin entry needs a name and a relative source without ..: ' + JSON.stringify(p));
+    }
+    const manifestPath = path.join(root, p.source, '.cursor-plugin', 'plugin.json');
+    if (!fs.existsSync(manifestPath)) throw new Error('missing manifest: ' + manifestPath);
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    if (manifest.name !== p.name) throw new Error('name mismatch for ' + p.source + ': marketplace=' + p.name + ' manifest=' + manifest.name);
+    if (manifest.logo !== undefined) {
+        if (typeof manifest.logo !== 'string' || path.isAbsolute(manifest.logo) || manifest.logo.split('/').includes('..')) throw new Error('logo must be a relative path without ..: ' + manifest.logo);
+        if (!fs.existsSync(path.join(root, p.source, manifest.logo))) throw new Error('logo file missing in staged copy: ' + manifest.logo);
+    }
+}
+" || fail "Cursor marketplace validation failed"
+ok "Cursor marketplace entries resolve to manifests with matching names and existing logos"
 
 step "Executing the SessionStart hook from the staged copy"
 # Same invocation as hooks/hooks.json; clean HOME so no real ~/.smritea state is read

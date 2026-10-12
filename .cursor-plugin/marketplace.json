@@ -1,0 +1,12 @@
+{
+  "name": "smritea",
+  "owner": { "name": "SmrutAI", "email": "hello@smritea.ai" },
+  "metadata": { "description": "Official SmriTea plugin marketplace — persistent AI memory for Cursor" },
+  "plugins": [
+    {
+      "name": "smritea",
+      "source": "cursor",
+      "description": "Persistent AI memory across sessions — store, search, and recall context automatically"
+    }
+  ]
+}
