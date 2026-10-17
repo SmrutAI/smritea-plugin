@@ -29,7 +29,7 @@ step "Rebuilding hook bundle (freshness check)"
 make -C "$PLUGIN_DIR" build >/dev/null
 if ! git -C "$PLUGIN_DIR" diff --quiet -- scripts/dist; then
     git -C "$PLUGIN_DIR" --no-pager diff --stat -- scripts/dist
-    fail "committed scripts/dist bundle is STALE — rebuild changed it; commit the regenerated bundle"
+    fail "scripts/dist bundle differs from the index — the rebuild changed it. Stage the regenerated bundle with: git add scripts/dist/context-hook.js  (then re-run the hooks)"
 fi
 ok "committed bundle matches a fresh build"
 

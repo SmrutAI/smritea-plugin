@@ -53,6 +53,8 @@ var require_config = __commonJS({
     var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var config_exports = {};
     __export(config_exports, {
+      MCP_TRACE_ORIGIN: () => MCP_TRACE_ORIGIN,
+      buildMcpTraceId: () => buildMcpTraceId,
       ensureSettingsFile: () => ensureSettingsFile,
       getAuthFilePath: () => getAuthFilePath,
       getSettingsPathForScope: () => getSettingsPathForScope,
@@ -124,6 +126,11 @@ var require_config = __commonJS({
     }
     function readAuthFile() {
       return readJsonFile(getAuthFilePath());
+    }
+    var MCP_TRACE_ORIGIN = "smritea-mcp";
+    function buildMcpTraceId(now) {
+      const runId = now.toISOString().slice(0, 19).replace(/[-:]/g, "");
+      return `${runId}.${MCP_TRACE_ORIGIN}`;
     }
     function getAuthFilePath() {
       const settings = readSettingsFile();
@@ -977,75 +984,80 @@ var SmriteaError = class extends Error {
   code;
   body;
   retryable;
-  constructor(message, httpStatus, code, body, retryable = false) {
+  /** Server request ID: the body `request_id`, else the `X-Request-ID` response header. */
+  requestId;
+  constructor(message, httpStatus, code, body, retryable = false, requestId) {
     super(message);
     this.name = "SmriteaError";
     this.httpStatus = httpStatus;
     this.code = code ?? "INTERNAL_ERROR";
     this.body = body;
     this.retryable = retryable;
+    this.requestId = requestId;
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaUnauthorizedError = class extends SmriteaError {
-  constructor(message, httpStatus, code, body, retryable = false) {
-    super(message, httpStatus ?? 401, code, body, retryable);
+  constructor(message, httpStatus, code, body, retryable = false, requestId) {
+    super(message, httpStatus ?? 401, code, body, retryable, requestId);
     this.name = "SmriteaUnauthorizedError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaNotFoundError = class extends SmriteaError {
-  constructor(message, httpStatus, code, body, retryable = false) {
-    super(message, httpStatus ?? 404, code, body, retryable);
+  constructor(message, httpStatus, code, body, retryable = false, requestId) {
+    super(message, httpStatus ?? 404, code, body, retryable, requestId);
     this.name = "SmriteaNotFoundError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaBadRequestError = class extends SmriteaError {
-  constructor(message, httpStatus, code, body, retryable = false) {
-    super(message, httpStatus ?? 400, code, body, retryable);
+  constructor(message, httpStatus, code, body, retryable = false, requestId) {
+    super(message, httpStatus ?? 400, code, body, retryable, requestId);
     this.name = "SmriteaBadRequestError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaPaymentRequiredError = class extends SmriteaError {
-  constructor(message, httpStatus, code, body, retryable = false) {
-    super(message, httpStatus ?? 402, code, body, retryable);
+  constructor(message, httpStatus, code, body, retryable = false, requestId) {
+    super(message, httpStatus ?? 402, code, body, retryable, requestId);
     this.name = "SmriteaPaymentRequiredError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaTooManyRequestsError = class extends SmriteaError {
   retryAfter;
-  constructor(message, httpStatus, retryAfter, code, body, retryable = true) {
-    super(message, httpStatus ?? 429, code, body, retryable);
+  constructor(message, httpStatus, retryAfter, code, body, retryable = true, requestId) {
+    super(message, httpStatus ?? 429, code, body, retryable, requestId);
     this.name = "SmriteaTooManyRequestsError";
     this.retryAfter = retryAfter;
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaForbiddenError = class extends SmriteaError {
-  constructor(message, httpStatus, code, body, retryable = false) {
-    super(message, httpStatus ?? 403, code, body, retryable);
+  constructor(message, httpStatus, code, body, retryable = false, requestId) {
+    super(message, httpStatus ?? 403, code, body, retryable, requestId);
     this.name = "SmriteaForbiddenError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaConflictError = class extends SmriteaError {
-  constructor(message, httpStatus, code, body, retryable = false) {
-    super(message, httpStatus ?? 409, code, body, retryable);
+  constructor(message, httpStatus, code, body, retryable = false, requestId) {
+    super(message, httpStatus ?? 409, code, body, retryable, requestId);
     this.name = "SmriteaConflictError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var SmriteaUnprocessableError = class extends SmriteaError {
-  constructor(message, httpStatus, code, body, retryable = false) {
-    super(message, httpStatus ?? 422, code, body, retryable);
+  constructor(message, httpStatus, code, body, retryable = false, requestId) {
+    super(message, httpStatus ?? 422, code, body, retryable, requestId);
     this.name = "SmriteaUnprocessableError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
 };
 var RETRY_CAP_MS = 3e4;
+var TRACE_ID_PATTERN = /^[A-Za-z0-9._:-]{8,100}$/;
+var TRACE_ID_ERROR_MESSAGE = "trace_id must be 8-100 characters of A-Z, a-z, 0-9, dot, underscore, colon or hyphen";
 var SmriteaClient = class {
   appId;
   api;
@@ -1053,9 +1065,13 @@ var SmriteaClient = class {
   constructor(config) {
     this.appId = config.appId;
     this.maxRetries = config.maxRetries ?? 2;
+    if (config.traceId !== void 0 && !TRACE_ID_PATTERN.test(config.traceId)) {
+      throw new TypeError(TRACE_ID_ERROR_MESSAGE);
+    }
     const configuration = new Configuration({
       basePath: config.baseUrl?.replace(/\/$/, "") ?? "https://api-us.smritea.ai",
-      apiKey: config.apiKey
+      apiKey: config.apiKey,
+      headers: config.traceId !== void 0 ? { "X-Trace-ID": config.traceId } : void 0
     });
     this.api = new SDKMemoryApi(configuration);
   }
@@ -1180,28 +1196,42 @@ var SmriteaClient = class {
       const code = errorData.code;
       const body = errorData.body;
       const retryable = errorData.retryable;
+      const requestId = this.extractRequestId(err.response, body);
       switch (status) {
         case 400:
-          throw new SmriteaBadRequestError(message, status, code, body, retryable);
+          throw new SmriteaBadRequestError(message, status, code, body, retryable, requestId);
         case 401:
-          throw new SmriteaUnauthorizedError(message, status, code, body, retryable);
+          throw new SmriteaUnauthorizedError(message, status, code, body, retryable, requestId);
         case 402:
-          throw new SmriteaPaymentRequiredError(message, status, code, body, retryable);
+          throw new SmriteaPaymentRequiredError(message, status, code, body, retryable, requestId);
         case 403:
-          throw new SmriteaForbiddenError(message, status, code, body, retryable);
+          throw new SmriteaForbiddenError(message, status, code, body, retryable, requestId);
         case 404:
-          throw new SmriteaNotFoundError(message, status, code, body, retryable);
+          throw new SmriteaNotFoundError(message, status, code, body, retryable, requestId);
         case 409:
-          throw new SmriteaConflictError(message, status, code, body, retryable);
+          throw new SmriteaConflictError(message, status, code, body, retryable, requestId);
         case 422:
-          throw new SmriteaUnprocessableError(message, status, code, body, retryable);
+          throw new SmriteaUnprocessableError(message, status, code, body, retryable, requestId);
         case 429:
-          throw new SmriteaTooManyRequestsError(message, status, this.parseRetryAfter(err.response), code, body, true);
+          throw new SmriteaTooManyRequestsError(message, status, this.parseRetryAfter(err.response), code, body, true, requestId);
         default:
-          throw new SmriteaError(message, status, code, body, retryable);
+          throw new SmriteaError(message, status, code, body, retryable, requestId);
       }
     }
     throw new SmriteaError(String(err));
+  }
+  /**
+   * Resolve the server request ID: the non-empty body `request_id` string, else the
+   * `X-Request-ID` response header. `Headers.get` is case-insensitive by the Fetch spec.
+   */
+  extractRequestId(response, body) {
+    if (body && typeof body === "object") {
+      const bodyRequestId = body.request_id;
+      if (typeof bodyRequestId === "string" && bodyRequestId) {
+        return bodyRequestId;
+      }
+    }
+    return response.headers.get("X-Request-ID") || void 0;
   }
   /** Attempt to extract error data ("message", "code", and "retryable" fields) from the response body JSON. */
   async extractErrorData(response) {

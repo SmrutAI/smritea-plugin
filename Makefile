@@ -6,7 +6,8 @@ help: ## Show available targets
 install: ## Install dependencies (smritea-sdk + devDeps)
 	npm install
 
-build: install ## Bundle scripts/context-hook.js + deps into scripts/dist/context-hook.js
+build: install ## Rebuild smritea-mcp, then bundle scripts/context-hook.js + deps into scripts/dist/context-hook.js
+	$(MAKE) -C ../smritea-mcp build
 	npm run build
 
 check: ## Syntax-check source scripts via node --check (no deps required)
