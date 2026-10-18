@@ -114,7 +114,7 @@ On every new session, the hook:
 
 1. Resolves Studio auth, selected app, and project metadata
 2. Stops early if no selected app or selected app API key exists
-3. Builds the dataplane `SmriteaClient` from the selected app API key and app ID
+3. Builds the `SmriteaClient` from the selected app API key and app ID
 4. Searches for relevant memories and formats them into `<smritea-context>`
 
 ## Cursor Support
