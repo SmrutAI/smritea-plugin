@@ -55,6 +55,7 @@ var require_config = __commonJS({
     __export(config_exports, {
       MCP_TRACE_ORIGIN: () => MCP_TRACE_ORIGIN,
       buildMcpTraceId: () => buildMcpTraceId,
+      buildTraceId: () => buildTraceId2,
       ensureSettingsFile: () => ensureSettingsFile,
       getAuthFilePath: () => getAuthFilePath,
       getSettingsPathForScope: () => getSettingsPathForScope,
@@ -128,9 +129,12 @@ var require_config = __commonJS({
       return readJsonFile(getAuthFilePath());
     }
     var MCP_TRACE_ORIGIN = "smritea-mcp";
-    function buildMcpTraceId(now) {
+    function buildTraceId2(now, origin) {
       const runId = now.toISOString().slice(0, 19).replace(/[-:]/g, "");
-      return `${runId}.${MCP_TRACE_ORIGIN}`;
+      return `${runId}.${origin}`;
+    }
+    function buildMcpTraceId(now) {
+      return buildTraceId2(now, MCP_TRACE_ORIGIN);
     }
     function getAuthFilePath() {
       const settings = readSettingsFile();
@@ -197,6 +201,9 @@ var require_config = __commonJS({
     }
   }
 });
+
+// scripts/context-hook.js
+var import_config2 = __toESM(require_config(), 1);
 
 // scripts/lib/settings.js
 var import_config = __toESM(require_config(), 1);
@@ -1064,7 +1071,7 @@ var SmriteaClient = class {
   maxRetries;
   constructor(config) {
     this.appId = config.appId;
-    this.maxRetries = config.maxRetries ?? 2;
+    this.maxRetries = Math.max(0, config.maxRetries ?? 2);
     if (config.traceId !== void 0 && !TRACE_ID_PATTERN.test(config.traceId)) {
       throw new TypeError(TRACE_ID_ERROR_MESSAGE);
     }
@@ -1258,6 +1265,8 @@ var SmriteaClient = class {
 };
 
 // scripts/context-hook.js
+var PLUGIN_TRACE_ORIGIN = "smritea-plugin";
+var PLUGIN_TRACE_ID = (0, import_config2.buildTraceId)(/* @__PURE__ */ new Date(), PLUGIN_TRACE_ORIGIN);
 async function main() {
   const { memoryBaseUrl, selectedAppAPIKey, selectedAppId, projectName } = resolveConfig();
   if (!selectedAppId) {
@@ -1271,7 +1280,8 @@ async function main() {
   const client = new SmriteaClient({
     apiKey: selectedAppAPIKey,
     appId: selectedAppId,
-    baseUrl: memoryBaseUrl
+    baseUrl: memoryBaseUrl,
+    traceId: PLUGIN_TRACE_ID
   });
   const searchOptions = {};
   if (projectName) {

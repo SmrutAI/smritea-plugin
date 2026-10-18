@@ -1,9 +1,15 @@
 // This file is bundled by esbuild (npm run build) into scripts/dist/context-hook.js.
 // The bundle is committed to the repo so users installing from GitHub don't need to run npm install.
 // Edit this source file; run `make build` or `npm run build` to regenerate the bundle.
+import { buildTraceId } from 'smritea-mcp/config';
 import { resolveConfig } from './lib/settings.js';
 import { formatContext } from './lib/format-context.js';
 import { SmriteaClient } from 'smritea-sdk';
+
+const PLUGIN_TRACE_ORIGIN = 'smritea-plugin';
+
+// Module-level, so each hook process (one SessionStart run) sends exactly one Trace ID.
+const PLUGIN_TRACE_ID = buildTraceId(new Date(), PLUGIN_TRACE_ORIGIN);
 
 async function main() {
   const { memoryBaseUrl, selectedAppAPIKey, selectedAppId, projectName } = resolveConfig();
@@ -22,6 +28,7 @@ async function main() {
     apiKey: selectedAppAPIKey,
     appId: selectedAppId,
     baseUrl: memoryBaseUrl,
+    traceId: PLUGIN_TRACE_ID,
   });
   const searchOptions = {};
   if (projectName) {

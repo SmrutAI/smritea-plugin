@@ -7,7 +7,7 @@ tags:
 stale_after: 2026-12-31
 generated:
   by: Tushar Dwivedi
-  at: 2026-08-25T00:00:00Z
+  at: 2026-10-19T01:43:49Z
 ---
 
 # SmriTea Plugin for Claude Code and Cursor
@@ -114,8 +114,14 @@ On every new session, the hook:
 
 1. Resolves Studio auth, selected app, and project metadata
 2. Stops early if no selected app or selected app API key exists
-3. Builds the `SmriteaClient` from the selected app API key and app ID
+3. Builds the `SmriteaClient` from the selected app API key and app ID, and passes a Trace ID through the SDK `traceId` option
 4. Searches for relevant memories and formats them into `<smritea-context>`
+
+### Trace ID
+
+Each SessionStart hook run sends one Trace ID in the `X-Trace-ID` header of its Smritea API calls. The format is `<UTC YYYYMMDDTHHMMSS>.smritea-plugin`, for example `20261017T110203.smritea-plugin`.
+
+The MCP server builds its Trace ID with the same builder, using the origin `smritea-mcp` (`<UTC YYYYMMDDTHHMMSS>.smritea-mcp`). The origin suffix shows whether a call came from the plugin hook or the MCP server.
 
 ## Cursor Support
 
