@@ -36,20 +36,17 @@ Persistent AI memory across sessions — store, search, and recall context autom
 
 ## Installation
 
-### 1. Clone the plugin repo
+### 1. Add the marketplace
 
-```bash
-git clone git@github.com:SmrutAI/smritea-plugin.git
-cd smritea-plugin
+```
+/plugin marketplace add SmrutAI/smritea-plugin
 ```
 
-### 2. Load the plugin into Claude Code
+### 2. Install the plugin
 
-```bash
-claude --plugin-dir .
 ```
-
-This loads the plugin for the current session. It is not published to any marketplace yet.
+/plugin install smritea@smritea
+```
 
 ### 3. Log in
 

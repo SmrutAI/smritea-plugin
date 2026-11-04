@@ -1125,7 +1125,8 @@ var SmriteaClient = class {
             actorId: options.scope.actorId,
             actorType: options.scope.actorType,
             conversationId: options.scope.conversationId,
-            participantIds: options.scope.participantIds
+            participantIds: options.scope.participantIds,
+            sourceType: options.scope.sourceType
           } : void 0,
           limit: options?.limit,
           graphDepth: options?.graphDepth,
