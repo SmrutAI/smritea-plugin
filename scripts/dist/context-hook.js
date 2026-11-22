@@ -986,6 +986,37 @@ var SDKMemoryApi = class extends BaseAPI {
     return await response.value();
   }
 };
+var DEFAULT_TIMEOUT_MS = 1e4;
+function combineSignals(timeoutSignal, callerSignal) {
+  if (!callerSignal) {
+    return timeoutSignal;
+  }
+  if (typeof AbortSignal.any === "function") {
+    return AbortSignal.any([timeoutSignal, callerSignal]);
+  }
+  const controller = new AbortController();
+  if (callerSignal.aborted) {
+    controller.abort(callerSignal.reason);
+    return controller.signal;
+  }
+  const onCallerAbort = () => controller.abort(callerSignal.reason);
+  callerSignal.addEventListener("abort", onCallerAbort, { once: true });
+  timeoutSignal.addEventListener(
+    "abort",
+    () => {
+      callerSignal.removeEventListener("abort", onCallerAbort);
+      controller.abort(timeoutSignal.reason);
+    },
+    { once: true }
+  );
+  return controller.signal;
+}
+function createDefaultFetch(timeoutMs, baseFetch) {
+  return (input, init) => {
+    const signal = combineSignals(AbortSignal.timeout(timeoutMs), init?.signal);
+    return (baseFetch ?? globalThis.fetch)(input, { ...init, signal });
+  };
+}
 var SmriteaError = class extends Error {
   httpStatus;
   code;
@@ -1078,7 +1109,7 @@ var SmriteaClient = class {
     const configuration = new Configuration({
       basePath: config.baseUrl?.replace(/\/$/, "") ?? "https://api-us.smritea.ai",
       apiKey: config.apiKey,
-      fetchApi: config.fetch,
+      fetchApi: config.fetch ?? createDefaultFetch(DEFAULT_TIMEOUT_MS),
       headers: config.traceId !== void 0 ? { "X-Trace-ID": config.traceId } : void 0
     });
     this.api = new SDKMemoryApi(configuration);
@@ -1145,7 +1176,10 @@ var SmriteaClient = class {
     return this.withRetry(() => this.api.getMemory({ xAppID: this.appId, memoryId }));
   }
   async delete(memoryId) {
-    await this.withRetry(() => this.api.deleteMemory({ xAppID: this.appId, memoryId }));
+    await this.withRetry(async () => {
+      const response = await this.api.deleteMemoryRaw({ xAppID: this.appId, memoryId });
+      await response.raw.arrayBuffer();
+    });
   }
   async getAll(options) {
     throw new Error(
